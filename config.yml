@@ -1,0 +1,38 @@
+aws:
+  region: us-east-1
+  iam_instance_profile_arn: arn:aws:iam::471112568442:instance-profile/EC2
+  hf_token: 
+  
+
+run_steps:
+    security_group_creation: yes
+    key_pair_generation: no
+    deploy_ec2_instance: yes
+    run_bash_script: yes
+    delete_ec2_instance: yes
+
+security_group:
+    group_name: ec2_multi_deploy
+    description: MultiDeploy EC2 Security Group
+    vpc_id:
+
+key_pair_gen:
+    #Need to change this name to something better?
+    # This assumes that if key_pair_generation is false, you have the key pair stored in the root.
+    # If so, change the file name to your KP name and the script will pick it up.
+    key_pair_name: ec2_multi_deploy_kp1
+    key_pair_fpath: ec2_multi_deploy_kp1.pem
+
+
+# Neuron AMI : ami-05d498302130f9036
+# DeepLearning AMI AL2 : ami-07f302d2a74e2b584
+# Al2 AMI, CPU bench : ami-0e54eba7c51c234f6
+# Take the below as list of dict as there might be 2 instances with the same AMI
+instances:
+  - instance_type: g5.2xlarge
+    ami_id: ami-05c3e698bd0cffe7e
+    startup_script: startup_scripts/gpu_ubuntu_startup.txt
+    fmbench_config: https://raw.githubusercontent.com/dheerajoruganty/multi-deploy-ec2/refs/heads/main/configs/config-ec2-llama3-8b.yml
+  # - instance_type: t3.micro
+  #   ami_id: ami-07f302d2a74e2b584
+  #   startup_script: startup_scripts/az_linux2_startup.txt

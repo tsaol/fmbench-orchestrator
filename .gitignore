@@ -1,0 +1,12 @@
+# Ignore Python cache directories
+__pycache__/
+*.py[cod]
+
+# Ignore .pem & log files
+*.pem
+*.log
+
+# Ignore folders
+output/
+downloaded_configs/
+fmbench_llm_utils/

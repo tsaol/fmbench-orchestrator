@@ -26,6 +26,25 @@ AMI_USERNAME_MAP = {
 }
 
 
+def load_yaml_file(file_path):
+    """
+    Load and parse a YAML file.
+
+    Args:
+        file_path (str): The path to the YAML file to be read.
+
+    Returns:
+        dict: Parsed content of the YAML file as a dictionary.
+    """
+    with open(file_path, "r") as file:
+        try:
+            data = yaml.safe_load(file)
+            return data
+        except yaml.YAMLError as error:
+            print(f"Error reading the YAML file: {error}")
+            return None
+
+
 def get_security_group_id_by_name(group_name, vpc_id, region="us-east-1"):
     """
     Retrieve the security group ID based on its name and VPC ID.
@@ -191,7 +210,12 @@ def create_ec2_instance(
     ami,
     instance_type,
     iam_arn,
-    region="us-east-1",
+    device_name='/dev/sda/1',
+    ebs_del_on_termination=True,
+    ebs_Iops=16000,
+    ebs_VolumeSize=250,
+    ebs_VolumeType='gp3',
+    region='us-east-1',
 ):
     """
     Create an EC2 instance with a startup script (user data) in the specified region.
@@ -206,19 +230,19 @@ def create_ec2_instance(
         str: The ID of the created instance.
     """
     # Initialize a session using Amazon EC2
-    ec2_resource = boto3.resource("ec2", region_name="us-east-1")
+    ec2_resource = boto3.resource("ec2", region_name=region)
 
     try:
         # Create a new EC2 instance with user data
         instances = ec2_resource.create_instances(
             BlockDeviceMappings=[
                 {
-                    "DeviceName": "/dev/sda1",
+                    "DeviceName": device_name,
                     "Ebs": {
-                        "DeleteOnTermination": True,
-                        "Iops": 16000,
-                        "VolumeSize": 250,
-                        "VolumeType": "gp3",
+                        "DeleteOnTermination": ebs_del_on_termination,
+                        "Iops": ebs_Iops,
+                        "VolumeSize": ebs_VolumeSize,
+                        "VolumeType": ebs_VolumeType,
                     },
                 },
             ],
@@ -465,6 +489,7 @@ def check_and_retrieve_results_folder(instance, local_folder_base):
     hostname = instance["hostname"]
     username = instance["username"]
     key_file_path = instance["key_file_path"]
+    instance_id = instance['instance_id']
 
     # Check for 'results-*' folders in the specified directory
     results_folders = check_for_results_folder(hostname, username, key_file_path)
@@ -473,7 +498,7 @@ def check_and_retrieve_results_folder(instance, local_folder_base):
     for folder in results_folders:
         if folder:  # Check if folder name is not empty
             # Create a local folder path for this instance
-            local_folder = os.path.join(local_folder_base, os.path.basename(folder))
+            local_folder = os.path.join(local_folder_base, instance_id, os.path.basename(folder))
             os.makedirs(
                 local_folder, exist_ok=True
             )  # Create local directory if it doesn't exist
@@ -487,7 +512,7 @@ def check_and_retrieve_results_folder(instance, local_folder_base):
 
 
 def generate_instance_details(
-    instance_id_list, key_file_path, config_map, region="us-east-1"
+    instance_id_list, key_file_path, config_map, post_startup_script, region="us-east-1"
 ):
     """
     Generates a list of instance details dictionaries containing hostname, username, and key file path.
@@ -505,6 +530,8 @@ def generate_instance_details(
     for instance_id in instance_id_list:
         config_entry = next((item for item in config_map if instance_id in item), None)
 
+        
+
         # If a config entry is found, get the config path
         if config_entry:
             config_path = config_entry[instance_id]
@@ -513,19 +540,25 @@ def generate_instance_details(
             instance_id, region, public_dns=True
         )
 
+        script_entry = next((item for item in post_startup_script if instance_id in item), None)
+        post_start_script = script_entry[instance_id] if script_entry else None
+    
         # Append the instance details to the list if hostname and username are found
         if public_hostname and username:
             instance_details.append(
                 {
                     "hostname": public_hostname,
                     "username": username,
-                    "key_file_path": key_file_path,
+                    "key_file_path": key_file_path + ".pem",
                     "config_file": config_path,
+                    "instance_id": instance_id,
+                    "post_startup_script" : post_start_script
                 }
             )
         else:
             print(
                 f"Failed to retrieve hostname and username for instance {instance_id}"
+                f"{post_start_script}"
             )
 
     return instance_details
@@ -736,3 +769,87 @@ async def handle_config_file_async(instance):
     )
 
     return remote_config_path
+
+
+def check_completion_flag(
+    hostname, username, key_file_path, flag_file_path="/tmp/startup_complete.flag"
+):
+    """
+    Checks if the startup flag file exists on the EC2 instance.
+
+    Args:
+        hostname (str): The public IP or DNS of the EC2 instance.
+        username (str): The SSH username (e.g., 'ubuntu').
+        key_file_path (str): The path to the PEM key file.
+        flag_file_path (str): The path to the startup flag file on the instance. Default is '/tmp/startup_complete.flag'.
+
+    Returns:
+        bool: True if the flag file exists, False otherwise.
+    """
+    try:
+        # Initialize the SSH client
+        ssh_client = paramiko.SSHClient()
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+        # Load the private key
+        private_key = paramiko.RSAKey.from_private_key_file(key_file_path)
+
+        # Connect to the instance
+        ssh_client.connect(hostname, username=username, pkey=private_key)
+        print(f"Connected to {hostname} as {username}")
+
+        # Check if the flag file exists
+        stdin, stdout, stderr = ssh_client.exec_command(
+            f"test -f {flag_file_path} && echo 'File exists'"
+        )
+        output = stdout.read().decode().strip()
+        error = stderr.read().decode().strip()
+
+        # Close the connection
+        ssh_client.close()
+
+        # Return True if the file exists, otherwise False
+        return output == "File exists"
+
+    except Exception as e:
+        print(f"Error connecting via SSH to {hostname}: {e}")
+        return False
+
+
+def wait_for_flag(
+    instance,
+    max_wait_time=600,
+    check_interval=30,
+    flag_file_path="/tmp/startup_complete.flag",
+):
+    """
+    Waits for the startup flag file on the EC2 instance, and returns the script if the flag file is found.
+
+    Args:
+        instance (dict): The dictionary containing instance details (hostname, username, key_file_path).
+        formatted_script (str): The bash script content to be executed.
+        remote_script_path (str): The remote path where the script should be saved on the instance.
+        max_wait_time (int): Maximum wait time in seconds (default: 600 seconds or 10 minutes).
+        check_interval (int): Interval time in seconds between checks (default: 30 seconds).
+    """
+    elapsed_time = 0
+    while elapsed_time < max_wait_time:
+        # Check if the startup flag exists on the instance
+        startup_complete = check_completion_flag(
+            hostname=instance["hostname"],
+            username=instance["username"],
+            key_file_path=instance["key_file_path"],
+            flag_file_path=flag_file_path,
+        )
+
+        if startup_complete:
+            return True
+
+        # Wait for the specified check interval before trying again
+        print(
+            f"{flag_file_path} flag file not found. Checking again in {check_interval} seconds..."
+        )
+        time.sleep(check_interval)
+        elapsed_time += check_interval
+
+    return False

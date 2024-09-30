@@ -11,6 +11,7 @@ logger = logging.getLogger(name=__name__)
 
 config_data = load_yaml_file(yaml_file_path)
 
+
 def get_region():
 
     session = boto3.session.Session()
@@ -74,7 +75,7 @@ def get_sg_id(region):
     GROUP_NAME = f"{config_data['security_group'].get('group_name')}-{region}"
     DESCRIPTION = config_data["security_group"].get("description", " ")
     VPC_ID = config_data["security_group"].get("vpc_id")
-    
+
     try:
         # Create or get the security group with the region-specific name
         sg_id = create_security_group(GROUP_NAME, DESCRIPTION, VPC_ID, region)
@@ -84,14 +85,14 @@ def get_sg_id(region):
             # Add inbound rules if security group was created or imported successfully
             authorize_inbound_rules(sg_id, region)
             logger.info(f"Inbound rules added to security group '{GROUP_NAME}'")
-        
+
         return sg_id
-    
+
     except ClientError as e:
-        logger.error(f"An error occurred while creating or getting the security group '{GROUP_NAME}': {e}")
+        logger.error(
+            f"An error occurred while creating or getting the security group '{GROUP_NAME}': {e}"
+        )
         raise  # Re-raise the exception for further handling if needed
-
-
 
 
 def get_key_pair(region):
@@ -102,8 +103,12 @@ def get_key_pair(region):
 
     # Generate the key pair name using the format: config_name-region
     config_name = config_data["key_pair_gen"]["key_pair_name"]
-    key_pair_name = f"{config_name}-{region}"  # Create the key pair name as config_name-region
-    private_key_fname = os.path.join(key_pair_dir, f"{key_pair_name}.pem")  # Ensure .pem is added once
+    key_pair_name = (
+        f"{config_name}-{region}"  # Create the key pair name as config_name-region
+    )
+    private_key_fname = os.path.join(
+        key_pair_dir, f"{key_pair_name}.pem"
+    )  # Ensure .pem is added once
 
     # Check if key pair generation is enabled
     if config_data["run_steps"]["key_pair_generation"]:
@@ -115,7 +120,9 @@ def get_key_pair(region):
                     private_key = file.read()
                 print(f"Using existing key pair from {private_key_fname}")
             except IOError as e:
-                raise ValueError(f"Error reading existing key pair file '{private_key_fname}': {e}")
+                raise ValueError(
+                    f"Error reading existing key pair file '{private_key_fname}': {e}"
+                )
         else:
             # If the key pair file doesn't exist, create a new key pair
             try:
@@ -123,10 +130,12 @@ def get_key_pair(region):
                 # Save the key pair to the file
                 with open(private_key_fname, "w") as key_file:
                     key_file.write(private_key)
-                
+
                 # Set file permissions to be readable only by the owner
                 os.chmod(private_key_fname, 0o400)
-                print(f"Key pair '{key_pair_name}' created and saved as '{private_key_fname}'")
+                print(
+                    f"Key pair '{key_pair_name}' created and saved as '{private_key_fname}'"
+                )
             except Exception as e:
                 # If key pair creation fails, raise an error
                 raise ValueError(f"Failed to create key pair '{key_pair_name}': {e}")
@@ -142,4 +151,3 @@ def get_key_pair(region):
             raise ValueError(f"Error reading key pair file '{private_key_fname}': {e}")
 
     return private_key_fname, key_pair_name
-

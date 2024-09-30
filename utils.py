@@ -250,8 +250,12 @@ def create_ec2_instance(
                 "Arn": iam_arn
             },
             CapacityReservationSpecification={
-                'CapacityReservationPreference': CapacityReservationPreference,
-                **({'CapacityReservationTarget': CapacityReservationTarget} if CapacityReservationTarget else {})
+                "CapacityReservationPreference": CapacityReservationPreference,
+                **(
+                    {"CapacityReservationTarget": CapacityReservationTarget}
+                    if CapacityReservationTarget
+                    else {}
+                ),
             },
             TagSpecifications=[
                 {

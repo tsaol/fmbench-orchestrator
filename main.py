@@ -177,20 +177,28 @@ if __name__ == "__main__":
                 ebs_VolumeType = instance["ebs_VolumeType"]
                 # Retrieve CapacityReservationId and CapacityReservationResourceGroupArn if they exist
                 CapacityReservationId = instance.get("CapacityReservationId", None)
-                CapacityReservationPreference = instance.get("CapacityReservationPreference", "none")
-                CapacityReservationResourceGroupArn = instance.get("CapacityReservationResourceGroupArn", None)
+                CapacityReservationPreference = instance.get(
+                    "CapacityReservationPreference", "none"
+                )
+                CapacityReservationResourceGroupArn = instance.get(
+                    "CapacityReservationResourceGroupArn", None
+                )
 
                 # Initialize CapacityReservationTarget only if either CapacityReservationId or CapacityReservationResourceGroupArn is provided
                 CapacityReservationTarget = {}
                 if CapacityReservationId:
-                    CapacityReservationTarget['CapacityReservationId'] = CapacityReservationId
+                    CapacityReservationTarget["CapacityReservationId"] = (
+                        CapacityReservationId
+                    )
                 if CapacityReservationResourceGroupArn:
-                    CapacityReservationTarget['CapacityReservationResourceGroupArn'] = CapacityReservationResourceGroupArn
+                    CapacityReservationTarget["CapacityReservationResourceGroupArn"] = (
+                        CapacityReservationResourceGroupArn
+                    )
 
                 # If CapacityReservationTarget is empty, set it to None
                 if not CapacityReservationTarget:
                     CapacityReservationTarget = None
-                
+
                 # user_data_script += command_to_run
                 # Create an EC2 instance with the user data script
                 instance_id = create_ec2_instance(

@@ -32,12 +32,12 @@ The **FMBench Orchestrator** is a tool designed to automate the deployment and m
 ## Conda Environment Setup
 1. **Create a Conda Environment with Python 3.11**:
     ```bash
-    conda create --name fmb-py311 python=3.11
+    conda create --name fmbench-orchestrator-py311 python=3.11
     ```
 
 2. **Activate the Environment**:
     ```bash
-    conda activate fmb-py311
+    conda activate fmbench-orchestrator-py311
     ```
 
 3. **Install Required Packages**:

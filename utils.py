@@ -541,8 +541,8 @@ def generate_instance_details(instance_id_list, instance_data_map):
         required_fields = [
             "fmbench_config",
             "post_startup_script",
-            "fmbench_llm_tokenizer_fp",
-            "fmbench_llm_config_fp",
+            "fmbench_llm_tokenizer_fpath",
+            "fmbench_llm_config_fpath",
             "fmbench_tokenizer_remote_dir",
             "fmbench_complete_timeout",
             "region",
@@ -563,8 +563,8 @@ def generate_instance_details(instance_id_list, instance_data_map):
         # Extract all the necessary configuration values from the config entry
         fmbench_config = config_entry["fmbench_config"]
         post_startup_script = config_entry["post_startup_script"]
-        fmbench_llm_tokenizer_fp = config_entry["fmbench_llm_tokenizer_fp"]
-        fmbench_llm_config_fp = config_entry["fmbench_llm_config_fp"]
+        fmbench_llm_tokenizer_fpath = config_entry["fmbench_llm_tokenizer_fpath"]
+        fmbench_llm_config_fpath = config_entry["fmbench_llm_config_fpath"]
         fmbench_tokenizer_remote_dir = config_entry["fmbench_tokenizer_remote_dir"]
         fmbench_complete_timeout = config_entry["fmbench_complete_timeout"]
         region = config_entry["region"]
@@ -589,8 +589,8 @@ def generate_instance_details(instance_id_list, instance_data_map):
                     ),
                     "config_file": fmbench_config,
                     "post_startup_script": post_startup_script,
-                    "fmbench_llm_tokenizer_fp": fmbench_llm_tokenizer_fp,
-                    "fmbench_llm_config_fp": fmbench_llm_config_fp,
+                    "fmbench_llm_tokenizer_fpath": fmbench_llm_tokenizer_fpath,
+                    "fmbench_llm_config_fpath": fmbench_llm_config_fpath,
                     "fmbench_tokenizer_remote_dir": fmbench_tokenizer_remote_dir,
                     "fmbench_complete_timeout": fmbench_complete_timeout,
                     "region": config_entry.get("region", "us-east-1"),

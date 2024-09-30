@@ -116,8 +116,8 @@ instances:
   CapacityReservationResourceGroupArn: {The ARN of the Capacity Reservation resource group in which to run the instance.}
   startup_script: startup_scripts/gpu_ubuntu_startup.txt
   post_startup_script: post_startup_scripts/fmbench.txt
-  fmbench_llm_tokenizer_fp: fmbench_llm_utils/tokenizer.json
-  fmbench_llm_config_fp: fmbench_llm_utils/config.json
+  fmbench_llm_tokenizer_fpath: fmbench_llm_utils/tokenizer.json
+  fmbench_llm_config_fpath: fmbench_llm_utils/config.json
   fmbench_tokenizer_remote_dir: /tmp/fmbench-read/llama3_tokenizer/
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 1200

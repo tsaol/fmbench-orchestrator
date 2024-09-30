@@ -31,7 +31,7 @@ logging.basicConfig(
     level=logging.INFO,  # Set the log level to INFO
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",  # Define log message format
     handlers=[
-        logging.FileHandler("multi_deploy_ec2.log"),  # Log to a file
+        logging.FileHandler("fmbench-Orchestrator.log"),  # Log to a file
         logging.StreamHandler(),  # Also log to console
     ],
 )
@@ -63,8 +63,8 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
             instance["hostname"],
             instance["username"],
             instance["key_file_path"],
-            instance["fmbench_llm_config_fp"],
-            instance["fmbench_llm_tokenizer_fp"],
+            instance["fmbench_llm_config_fpath"],
+            instance["fmbench_llm_tokenizer_fpath"],
             instance["fmbench_tokenizer_remote_dir"],
         )
 
@@ -136,11 +136,11 @@ if __name__ == "__main__":
 
     region = config_data["aws"].get("region", get_region())
 
-    hf_token_fp = config_data["aws"].get("hf_token_fp")
-    logger.info(f"Got Hugging Face Token file path from config. {hf_token_fp}")
+    hf_token_fpath = config_data["aws"].get("hf_token_fpath")
+    logger.info(f"Got Hugging Face Token file path from config. {hf_token_fpath}")
     logger.info("Attempting to open it")
 
-    with open(hf_token_fp) as file:
+    with open(hf_token_fpath) as file:
         hf_token = file.read()
 
     logger.info(f"read hugging face token {hf_token} from file path")
@@ -223,8 +223,8 @@ if __name__ == "__main__":
             instance_data_map[instance_id] = {
                 "fmbench_config": instance["fmbench_config"],
                 "post_startup_script": instance["post_startup_script"],
-                "fmbench_llm_tokenizer_fp": instance["fmbench_llm_tokenizer_fp"],
-                "fmbench_llm_config_fp": instance["fmbench_llm_config_fp"],
+                "fmbench_llm_tokenizer_fpath": instance["fmbench_llm_tokenizer_fpath"],
+                "fmbench_llm_config_fpath": instance["fmbench_llm_config_fpath"],
                 "fmbench_tokenizer_remote_dir": instance[
                     "fmbench_tokenizer_remote_dir"
                 ],

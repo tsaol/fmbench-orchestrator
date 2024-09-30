@@ -199,7 +199,7 @@ if __name__ == "__main__":
             
 
     logger.info("Going to Sleep for 60 seconds to make sure the instances are up")
-    # time.sleep(60)
+    time.sleep(60)
 
     if config_data["run_steps"]["run_bash_script"]:
         instance_details = generate_instance_details(

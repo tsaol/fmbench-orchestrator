@@ -1,28 +1,49 @@
 aws:
   region: us-east-1
   iam_instance_profile_arn: arn:aws:iam::471112568442:instance-profile/EC2
-  hf_token_fp: /home/dh/DSAN/FMBench/hf_token.txt
+  hf_token_fpath: /tmp/hf_token.txt
   
 
 run_steps:
-    security_group_creation: yes
-    key_pair_generation: yes
-    deploy_ec2_instance: yes
-    run_bash_script: yes
-    delete_ec2_instance: yes
+  security_group_creation: yes
+  key_pair_generation: yes
+  deploy_ec2_instance: yes
+  run_bash_script: yes
+  delete_ec2_instance: yes
 
 security_group:
-    group_name: fmbench_orchestrator_sg
-    description: MultiDeploy EC2 Security Group
-    #If VPC Is left empty, boto3 automatically gets the default vpc for your region
-    vpc_id:
+  group_name: fmbench_orchestrator_sg
+  description: MultiDeploy EC2 Security Group
+  #If VPC Is left empty, boto3 automatically gets the default vpc for your region
+  vpc_id:
 
 key_pair_gen:
-    #Need to change this name to something better?
-    # This assumes that if key_pair_generation is false, you have the key pair stored in the root.
-    # If so, change the file name to your KP name and the script will pick it up.
-    key_pair_name: fmbench_orchestrator_kp
-    key_pair_fpath: fmbench_orchestrator_kp.pem
+  #Need to change this name to something better?
+  # This assumes that if key_pair_generation is false, you have the key pair stored in the root.
+  # If so, change the file name to your KP name and the script will pick it up.
+  key_pair_name: fmbench_orchestrator
+
+#Instance follows the format below.
+# - instance_type: {instance_name_here}
+#   region: {region_here}
+#   ami_id: {ami_id_here}
+#   device_name: /dev/sda1
+#   ebs_del_on_termination: True | False
+#   ebs_Iops: 16000
+#   ebs_VolumeSize: {Volume_Size_Here}
+#   ebs_VolumeType: {Volume_type_Here}
+#   #Defaults to none, You can use either Reservation Id ARN or both
+#   CapacityReservationPreference: open | none
+#   CapacityReservationId: {The ID of the Capacity Reservation in which to run the instance.}
+#   CapacityReservationResourceGroupArn: {The ARN of the Capacity Reservation resource group in which to run the instance.}
+#   startup_script: startup_scripts/gpu_ubuntu_startup.txt
+#   post_startup_script: post_startup_scripts/fmbench.txt
+#   fmbench_llm_tokenizer_fpath: fmbench_llm_utils/tokenizer.json
+#   fmbench_llm_config_fpath: fmbench_llm_utils/config.json
+#   fmbench_tokenizer_remote_dir: /tmp/fmbench-read/llama3_tokenizer/
+#   # Timeout period in Seconds before a run is stopped
+#   fmbench_complete_timeout: 1200
+#   fmbench_config: https://raw.githubusercontent.com/dheerajoruganty/multi-deploy-ec2/refs/heads/main/configs/config-ec2-llama3-8b.yml
 
 
 # Neuron AMI : ami-05d498302130f9036
@@ -30,35 +51,37 @@ key_pair_gen:
 # Al2 AMI, CPU bench : ami-0e54eba7c51c234f6
 # Take the below as list of dict as there might be 2 instances with the same AMI
 instances:
-  - instance_type: g5.2xlarge
-    ami_id: ami-05c3e698bd0cffe7e
-    device_name: /dev/sda1
-    ebs_del_on_termination: True
-    ebs_Iops: 16000
-    ebs_VolumeSize: 250
-    ebs_VolumeType: gp3
-    startup_script: startup_scripts/gpu_ubuntu_startup.txt
-    post_startup_script: post_startup_scripts/fmbench.txt
-    fmbench_llm_tokenizer_fp: fmbench_llm_utils/tokenizer.json
-    fmbench_llm_config_fp: fmbench_llm_utils/config.json
-    fmbench_tokenizer_remote_dir: /tmp/fmbench-read/llama3_tokenizer/
-    # Timeout period in Seconds before a run is stopped
-    fmbench_complete_timeout: 1200
-    fmbench_config: https://raw.githubusercontent.com/dheerajoruganty/multi-deploy-ec2/refs/heads/main/configs/config-ec2-llama3-8b.yml
+- instance_type: g5.2xlarge
+  region: us-west-2
+  ami_id: ami-0ef389de7488b38d4
+  device_name: /dev/sda1
+  ebs_del_on_termination: True
+  ebs_Iops: 16000
+  ebs_VolumeSize: 250
+  ebs_VolumeType: gp3
+  startup_script: startup_scripts/gpu_ubuntu_startup.txt
+  post_startup_script: post_startup_scripts/fmbench.txt
+  fmbench_llm_tokenizer_fpath: fmbench_llm_utils/tokenizer.json
+  fmbench_llm_config_fpath: fmbench_llm_utils/config.json
+  fmbench_tokenizer_remote_dir: /tmp/fmbench-read/llama3_tokenizer/
+  # Timeout period in Seconds before a run is stopped
+  fmbench_complete_timeout: 1200
+  fmbench_config: https://raw.githubusercontent.com/dheerajoruganty/multi-deploy-ec2/refs/heads/main/configs/config-ec2-llama3-8b.yml
 
-  
-  
-  # - instance_type: g5.2xlarge
-  #   ami_id: ami-05c3e698bd0cffe7e
-  #   device_name: /dev/sda1
-  #   ebs_del_on_termination: True
-  #   ebs_Iops: 16000
-  #   ebs_VolumeSize: 250
-  #   ebs_VolumeType: gp3
-  #   startup_script: startup_scripts/gpu_ubuntu_startup.txt
-  #   post_startup_script: post_startup_scripts/fmbench.txt
-  #   fmbench_config: https://raw.githubusercontent.com/dheerajoruganty/multi-deploy-ec2/refs/heads/main/configs/config-ec2-llama3-8b.yml
-  
-  # - instance_type: t3.micro
-  #   ami_id: ami-07f302d2a74e2b584
-  #   startup_script: startup_scripts/az_linux2_startup.txt
+- instance_type: g5.2xlarge
+  region: us-east-1
+  ami_id: ami-067bd563cecc90173
+  device_name: /dev/sda1
+  ebs_del_on_termination: True
+  ebs_Iops: 15900
+  ebs_VolumeSize: 250
+  ebs_VolumeType: gp3
+  startup_script: startup_scripts/gpu_ubuntu_startup.txt
+  post_startup_script: post_startup_scripts/fmbench.txt
+  fmbench_llm_tokenizer_fpath: fmbench_llm_utils/tokenizer.json
+  fmbench_llm_config_fpath: fmbench_llm_utils/config.json
+  fmbench_tokenizer_remote_dir: /tmp/fmbench-read/llama3_tokenizer/
+  # Timeout period in Seconds before a run is stopped
+  fmbench_complete_timeout: 1200
+  fmbench_config: https://raw.githubusercontent.com/dheerajoruganty/multi-deploy-ec2/refs/heads/main/configs/config-ec2-llama3-8b.yml
+

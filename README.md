@@ -32,12 +32,12 @@ The **FMBench Orchestrator** is a tool designed to automate the deployment and m
 ## Conda Environment Setup
 1. **Create a Conda Environment with Python 3.11**:
     ```bash
-    conda create --name fmb-py311 python=3.11
+    conda create --name fmbench-orchestrator-py311 python=3.11
     ```
 
 2. **Activate the Environment**:
     ```bash
-    conda activate fmb-py311
+    conda activate fmbench-orchestrator-py311
     ```
 
 3. **Install Required Packages**:
@@ -47,7 +47,7 @@ The **FMBench Orchestrator** is a tool designed to automate the deployment and m
 
 ## Running FMBench Orchestrator:
 ```bash
-python fmbench-orchestrator.py
+python main.py
 ```
 
 # FMBENCH Orchestrator Configuration Guide
@@ -102,16 +102,27 @@ The following is an example configuration for deploying a `g5.2xlarge` and `g5.1
 
 ```yaml
 instances:
-  - instance_type: g5.2xlarge
-    ami_id: ami-05c3e698bd0cffe7e
-    startup_script: startup_scripts/gpu_ubuntu_startup.txt
-    post_startup_script: post_startup_scripts/fmbench.txt
-    fmbench_config: {config_fp_here}
-  - instance_type: g5.12xlarge
-    ami_id: ami-05c3e698bd0cffe7e
-    startup_script: startup_scripts/gpu_ubuntu_startup.txt
-    post_startup_script: post_startup_scripts/fmbench.txt
-    fmbench_config: {config_https_link_here}
+- instance_type: {instance_name_here}
+  region: {region_here}
+  ami_id: {ami_id_here}
+  device_name: /dev/sda1
+  ebs_del_on_termination: True | False
+  ebs_Iops: 16000
+  ebs_VolumeSize: {Volume_Size_Here}
+  ebs_VolumeType: {Volume_type_Here}
+  #Defaults to none, You can use either Reservation Id ARN or both
+  CapacityReservationPreference: open | none
+  CapacityReservationId: {The ID of the Capacity Reservation in which to run the instance.}
+  CapacityReservationResourceGroupArn: {The ARN of the Capacity Reservation resource group in which to run the instance.}
+  startup_script: startup_scripts/gpu_ubuntu_startup.txt
+  post_startup_script: post_startup_scripts/fmbench.txt
+  fmbench_llm_tokenizer_fpath: fmbench_llm_utils/tokenizer.json
+  fmbench_llm_config_fpath: fmbench_llm_utils/config.json
+  fmbench_tokenizer_remote_dir: /tmp/fmbench-read/llama3_tokenizer/
+  # Timeout period in Seconds before a run is stopped
+  fmbench_complete_timeout: 1200
+  fmbench_config: {fmbench_config_here}
+
 ```
 
 ## Customization

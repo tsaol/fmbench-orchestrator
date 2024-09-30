@@ -187,15 +187,6 @@ def create_key_pair(key_name, region="us-east-1"):
         private_key = response["KeyMaterial"]
 
         # Save the private key to a .pem file
-        with open(f"{key_name}.pem", "w") as key_file:
-            key_file.write(private_key)
-
-        # Set the correct permissions for the .pem file
-        import os
-
-        os.chmod(f"{key_name}.pem", 0o400)  # Readable only by the owner
-
-        print(f"Key pair '{key_name}' created and saved as '{key_name}.pem'")
         return private_key
 
     except ClientError as e:
@@ -210,12 +201,14 @@ def create_ec2_instance(
     ami,
     instance_type,
     iam_arn,
-    device_name='/dev/sda/1',
+    device_name="/dev/sda/1",
     ebs_del_on_termination=True,
     ebs_Iops=16000,
     ebs_VolumeSize=250,
-    ebs_VolumeType='gp3',
-    region='us-east-1',
+    ebs_VolumeType="gp3",
+    CapacityReservationPreference="none",
+    CapacityReservationTarget=None,
+    region="us-east-1",
 ):
     """
     Create an EC2 instance with a startup script (user data) in the specified region.
@@ -256,10 +249,18 @@ def create_ec2_instance(
             IamInstanceProfile={  # IAM role to associate with the instance
                 "Arn": iam_arn
             },
+            CapacityReservationSpecification={
+                "CapacityReservationPreference": CapacityReservationPreference,
+                **(
+                    {"CapacityReservationTarget": CapacityReservationTarget}
+                    if CapacityReservationTarget
+                    else {}
+                ),
+            },
             TagSpecifications=[
                 {
                     "ResourceType": "instance",
-                    "Tags": [{"Key": "Name", "Value": "FMbench-EC2"}],
+                    "Tags": [{"Key": "Name", "Value": "FMbench-Orchestrator-EC2"}],
                 }
             ],
         )
@@ -327,7 +328,7 @@ def get_ec2_hostname_and_username(instance_id, region="us-east-1", public_dns=Tr
             hostname = instance.get("PrivateDnsName")
 
         # Determine the username based on the AMI ID
-        username = determine_username(ami_id)
+        username = determine_username(ami_id, region)
 
         # Return the hostname and username if available
         if hostname and username:
@@ -343,7 +344,7 @@ def get_ec2_hostname_and_username(instance_id, region="us-east-1", public_dns=Tr
         return None, None
 
 
-def determine_username(ami_id):
+def determine_username(ami_id, region):
     """
     Determine the appropriate username based on the AMI ID or name.
 
@@ -353,7 +354,7 @@ def determine_username(ami_id):
     Returns:
         str: The username for the EC2 instance.
     """
-    ec2_client = boto3.client("ec2")
+    ec2_client = boto3.client("ec2", region)
 
     try:
         # Describe the AMI to get its name
@@ -489,7 +490,7 @@ def check_and_retrieve_results_folder(instance, local_folder_base):
     hostname = instance["hostname"]
     username = instance["username"]
     key_file_path = instance["key_file_path"]
-    instance_id = instance['instance_id']
+    instance_id = instance["instance_id"]
 
     # Check for 'results-*' folders in the specified directory
     results_folders = check_for_results_folder(hostname, username, key_file_path)
@@ -498,7 +499,9 @@ def check_and_retrieve_results_folder(instance, local_folder_base):
     for folder in results_folders:
         if folder:  # Check if folder name is not empty
             # Create a local folder path for this instance
-            local_folder = os.path.join(local_folder_base, instance_id, os.path.basename(folder))
+            local_folder = os.path.join(
+                local_folder_base, instance_id, os.path.basename(folder)
+            )
             os.makedirs(
                 local_folder, exist_ok=True
             )  # Create local directory if it doesn't exist
@@ -511,16 +514,13 @@ def check_and_retrieve_results_folder(instance, local_folder_base):
             )
 
 
-def generate_instance_details(
-    instance_id_list, key_file_path, config_map, post_startup_script, region="us-east-1"
-):
+def generate_instance_details(instance_id_list, instance_data_map):
     """
     Generates a list of instance details dictionaries containing hostname, username, and key file path.
 
     Args:
         instance_id_list (list): List of EC2 instance IDs.
-        key_file_path (str): The path to the PEM key file.
-        region (str): The AWS region where the instances are located.
+        instance_data_map (dict) : Dict of all neccessary fields
 
     Returns:
         list: A list of dictionaries containing hostname, username, and key file path for each instance.
@@ -528,37 +528,77 @@ def generate_instance_details(
     instance_details = []
 
     for instance_id in instance_id_list:
-        config_entry = next((item for item in config_map if instance_id in item), None)
-
-        
 
         # If a config entry is found, get the config path
-        if config_entry:
-            config_path = config_entry[instance_id]
+        # Directly access the instance_data_map using the instance_id
+        config_entry = instance_data_map.get(instance_id, None)
+
+        # If no config entry is found, raise an exception
+        if not config_entry:
+            raise ValueError(f"Configuration not found for instance ID: {instance_id}")
+
+        # Check if all required fields are present, raise a ValueError if any are missing
+        required_fields = [
+            "fmbench_config",
+            "post_startup_script",
+            "fmbench_llm_tokenizer_fpath",
+            "fmbench_llm_config_fpath",
+            "fmbench_tokenizer_remote_dir",
+            "fmbench_complete_timeout",
+            "region",
+            "PRIVATE_KEY_FNAME",
+        ]
+
+        missing_fields = [
+            field
+            for field in required_fields
+            if field not in config_entry or config_entry[field] is None
+        ]
+
+        if missing_fields:
+            raise ValueError(
+                f"Missing configuration fields for instance ID {instance_id}: {', '.join(missing_fields)}"
+            )
+
+        # Extract all the necessary configuration values from the config entry
+        fmbench_config = config_entry["fmbench_config"]
+        post_startup_script = config_entry["post_startup_script"]
+        fmbench_llm_tokenizer_fpath = config_entry["fmbench_llm_tokenizer_fpath"]
+        fmbench_llm_config_fpath = config_entry["fmbench_llm_config_fpath"]
+        fmbench_tokenizer_remote_dir = config_entry["fmbench_tokenizer_remote_dir"]
+        fmbench_complete_timeout = config_entry["fmbench_complete_timeout"]
+        region = config_entry["region"]
+        PRIVATE_KEY_FNAME = config_entry["PRIVATE_KEY_FNAME"]
+
         # Get the public hostname and username for each instance
         public_hostname, username = get_ec2_hostname_and_username(
             instance_id, region, public_dns=True
         )
 
-        script_entry = next((item for item in post_startup_script if instance_id in item), None)
-        post_start_script = script_entry[instance_id] if script_entry else None
-    
         # Append the instance details to the list if hostname and username are found
         if public_hostname and username:
             instance_details.append(
                 {
+                    "instance_id": instance_id,
                     "hostname": public_hostname,
                     "username": username,
-                    "key_file_path": key_file_path + ".pem",
-                    "config_file": config_path,
-                    "instance_id": instance_id,
-                    "post_startup_script" : post_start_script
+                    "key_file_path": (
+                        f"{PRIVATE_KEY_FNAME}.pem"
+                        if not PRIVATE_KEY_FNAME.endswith(".pem")
+                        else PRIVATE_KEY_FNAME
+                    ),
+                    "config_file": fmbench_config,
+                    "post_startup_script": post_startup_script,
+                    "fmbench_llm_tokenizer_fpath": fmbench_llm_tokenizer_fpath,
+                    "fmbench_llm_config_fpath": fmbench_llm_config_fpath,
+                    "fmbench_tokenizer_remote_dir": fmbench_tokenizer_remote_dir,
+                    "fmbench_complete_timeout": fmbench_complete_timeout,
+                    "region": config_entry.get("region", "us-east-1"),
                 }
             )
         else:
             print(
                 f"Failed to retrieve hostname and username for instance {instance_id}"
-                f"{post_start_script}"
             )
 
     return instance_details
@@ -710,11 +750,11 @@ async def download_config_async(url, download_dir="downloaded_configs"):
 
 # Asynchronous function to upload a file to the EC2 instance
 async def upload_file_to_instance_async(
-    hostname, username, key_file_path, local_path, remote_path
+    hostname, username, key_file_path, local_paths, remote_path
 ):
-    """Asynchronously uploads a file to the EC2 instance."""
+    """Asynchronously uploads multiple files to the EC2 instance."""
 
-    def upload_file():
+    def upload_files():
         try:
             # Initialize the SSH client
             ssh_client = paramiko.SSHClient()
@@ -727,44 +767,60 @@ async def upload_file_to_instance_async(
             ssh_client.connect(hostname, username=username, pkey=private_key)
             print(f"Connected to {hostname} as {username}")
 
-            # Upload the file
+            # Upload the files
             with SCPClient(ssh_client.get_transport()) as scp:
-                scp.put(local_path, remote_path)
-                print(f"Uploaded {local_path} to {hostname}:{remote_path}")
+                for local_path in local_paths:
+                    scp.put(local_path, remote_path)
+                    print(f"Uploaded {local_path} to {hostname}:{remote_path}")
 
             # Close the SSH connection
             ssh_client.close()
         except Exception as e:
-            print(f"Error uploading file to {hostname}: {e}")
+            print(f"Error uploading files to {hostname}: {e}")
 
     # Run the blocking upload operation in a separate thread
-    await asyncio.get_event_loop().run_in_executor(executor, upload_file)
+    await asyncio.get_event_loop().run_in_executor(None, upload_files)
+
+
+async def upload_config_and_tokenizer(
+    hostname, username, key_file_path, config_path, tokenizer_path, remote_path
+):
+    # List of files to upload
+    local_paths = [config_path, tokenizer_path]
+
+    # Call the asynchronous file upload function
+    await upload_file_to_instance_async(
+        hostname, username, key_file_path, local_paths, remote_path
+    )
 
 
 # Asynchronous function to handle the configuration file
 async def handle_config_file_async(instance):
     """Handles downloading and uploading of the config file based on the config type (URL or local path)."""
     config_path = instance["config_file"]
-
+    local_paths = []
     # Check if the config path is a URL
     if is_url(config_path):
         print(f"Config is a URL. Downloading from {config_path}...")
         local_config_path = await download_config_async(config_path)
+        local_paths.append(local_config_path)
     else:
         # It's a local file path, use it directly
         local_config_path = config_path
+        local_paths.append(local_config_path)
 
     # Define the remote path for the configuration file on the EC2 instance
     remote_config_path = (
         f"/home/{instance['username']}/{os.path.basename(local_config_path)}"
     )
+    print(f"remote_config_path is: {remote_config_path}...")
 
     # Upload the configuration file to the EC2 instance
     await upload_file_to_instance_async(
         instance["hostname"],
         instance["username"],
         instance["key_file_path"],
-        local_config_path,
+        local_paths,
         remote_config_path,
     )
 
@@ -791,6 +847,7 @@ def check_completion_flag(
         ssh_client = paramiko.SSHClient()
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
+        print(f"{key_file_path}")
         # Load the private key
         private_key = paramiko.RSAKey.from_private_key_file(key_file_path)
 

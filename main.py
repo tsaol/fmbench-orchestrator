@@ -59,14 +59,14 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
 
         print("Startup Script complete, executing fmbench now")
 
-        await upload_config_and_tokenizer(instance["hostname"],
+        await upload_config_and_tokenizer(
+            instance["hostname"],
             instance["username"],
             instance["key_file_path"],
-            instance['fmbench_llm_config_fp'],
-            instance['fmbench_llm_tokenizer_fp'],
-            instance['fmbench_tokenizer_remote_dir'])
-            
-        
+            instance["fmbench_llm_config_fp"],
+            instance["fmbench_llm_tokenizer_fp"],
+            instance["fmbench_tokenizer_remote_dir"],
+        )
 
         # Upload and execute the script on the instance
         script_output = await asyncio.get_event_loop().run_in_executor(
@@ -82,7 +82,12 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
 
         # Check for the fmbench completion flag
         fmbench_complete = await asyncio.get_event_loop().run_in_executor(
-            executor, wait_for_flag, instance, instance['fmbench_complete_timeout'], 30, "/tmp/fmbench_completed.flag"
+            executor,
+            wait_for_flag,
+            instance,
+            instance["fmbench_complete_timeout"],
+            30,
+            "/tmp/fmbench_completed.flag",
         )
 
         if fmbench_complete:
@@ -91,8 +96,8 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
                 executor, check_and_retrieve_results_folder, instance, "output"
             )
             if config_data["run_steps"]["delete_ec2_instance"]:
-                    delete_ec2_instance(instance['instance_id'])
-                    instance_id_list.remove(instance['instance_id'])
+                delete_ec2_instance(instance["instance_id"])
+                instance_id_list.remove(instance["instance_id"])
 
 
 async def multi_deploy_fmbench(instance_details, remote_script_path):
@@ -100,13 +105,15 @@ async def multi_deploy_fmbench(instance_details, remote_script_path):
 
     # Create a task for each instance
     for instance in instance_details:
-        #Make this async as well?
+        # Make this async as well?
         # Format the script with the specific config file
         logger.info(f"Instance Details are: {instance}")
-        logger.info(f"Attempting to open bash script at {instance['post_startup_script']}")
-        with open(instance['post_startup_script']) as file:
+        logger.info(
+            f"Attempting to open bash script at {instance['post_startup_script']}"
+        )
+        with open(instance["post_startup_script"]) as file:
             bash_script = file.read()
-        
+
         logger.info("Read Bash Script")
         logger.info(f"{bash_script}")
 
@@ -127,17 +134,17 @@ if __name__ == "__main__":
     config_data = load_yaml_file(yaml_file_path)
     logger.info(f"Loaded Config {config_data}")
 
-    region = config_data['aws'].get('region', get_region())
+    region = config_data["aws"].get("region", get_region())
 
     hf_token_fp = config_data["aws"].get("hf_token_fp")
     logger.info(f"Got Hugging Face Token file path from config. {hf_token_fp}")
-    logger.info('Attempting to open it')
+    logger.info("Attempting to open it")
 
     with open(hf_token_fp) as file:
         hf_token = file.read()
 
     logger.info(f"read hugging face token {hf_token} from file path")
-    assert len(hf_token)>4, "Hf_token is too small or invalid, please check"
+    assert len(hf_token) > 4, "Hf_token is too small or invalid, please check"
 
     for i in config_data["instances"]:
         logger.info(f"Instance list is as follows: {i}")
@@ -148,24 +155,42 @@ if __name__ == "__main__":
         print(iam_arn)
         # WIP Parallelize This.
         for instance in config_data["instances"]:
-            region = instance['region']
+            region = instance["region"]
             startup_script = instance["startup_script"]
             logger.info(f"Region Set for instance is: {region}")
             if config_data["run_steps"]["security_group_creation"]:
-                logger.info(f"Creating Security Groups. getting them by name if they exist")
+                logger.info(
+                    f"Creating Security Groups. getting them by name if they exist"
+                )
                 sg_id = get_sg_id(region)
             PRIVATE_KEY_FNAME, PRIVATE_KEY_NAME = get_key_pair(region)
             # command_to_run = instance["command_to_run"]
             with open(f"{startup_script}", "r") as file:
                 user_data_script = file.read()
-            if instance.get('instance_id') is None:
+            if instance.get("instance_id") is None:
                 instance_type = instance["instance_type"]
                 ami_id = instance["ami_id"]
-                device_name=instance['device_name']
-                ebs_del_on_termination=instance['ebs_del_on_termination']
-                ebs_Iops=instance['ebs_Iops']
-                ebs_VolumeSize=instance['ebs_VolumeSize']
-                ebs_VolumeType=instance['ebs_VolumeType']
+                device_name = instance["device_name"]
+                ebs_del_on_termination = instance["ebs_del_on_termination"]
+                ebs_Iops = instance["ebs_Iops"]
+                ebs_VolumeSize = instance["ebs_VolumeSize"]
+                ebs_VolumeType = instance["ebs_VolumeType"]
+                # Retrieve CapacityReservationId and CapacityReservationResourceGroupArn if they exist
+                CapacityReservationId = instance.get("CapacityReservationId", None)
+                CapacityReservationPreference = instance.get("CapacityReservationPreference", "none")
+                CapacityReservationResourceGroupArn = instance.get("CapacityReservationResourceGroupArn", None)
+
+                # Initialize CapacityReservationTarget only if either CapacityReservationId or CapacityReservationResourceGroupArn is provided
+                CapacityReservationTarget = {}
+                if CapacityReservationId:
+                    CapacityReservationTarget['CapacityReservationId'] = CapacityReservationId
+                if CapacityReservationResourceGroupArn:
+                    CapacityReservationTarget['CapacityReservationResourceGroupArn'] = CapacityReservationResourceGroupArn
+
+                # If CapacityReservationTarget is empty, set it to None
+                if not CapacityReservationTarget:
+                    CapacityReservationTarget = None
+                
                 # user_data_script += command_to_run
                 # Create an EC2 instance with the user data script
                 instance_id = create_ec2_instance(
@@ -180,23 +205,25 @@ if __name__ == "__main__":
                     ebs_Iops,
                     ebs_VolumeSize,
                     ebs_VolumeType,
-                    region
+                    CapacityReservationPreference,
+                    CapacityReservationTarget,
+                    region,
                 )
-            if instance.get('instance_id') is not None:
-                instance_id = instance['instance_id']
+            if instance.get("instance_id") is not None:
+                instance_id = instance["instance_id"]
             instance_id_list.append(instance_id)
             instance_data_map[instance_id] = {
-            "fmbench_config": instance["fmbench_config"],
-            "post_startup_script": instance["post_startup_script"],
-            "fmbench_llm_tokenizer_fp": instance["fmbench_llm_tokenizer_fp"],
-            "fmbench_llm_config_fp":instance["fmbench_llm_config_fp"],
-            "fmbench_tokenizer_remote_dir": instance["fmbench_tokenizer_remote_dir"],
-            "fmbench_complete_timeout": instance["fmbench_complete_timeout"],
-            "region": instance["region"],
-            "PRIVATE_KEY_FNAME" : PRIVATE_KEY_FNAME
-
-        }
-            
+                "fmbench_config": instance["fmbench_config"],
+                "post_startup_script": instance["post_startup_script"],
+                "fmbench_llm_tokenizer_fp": instance["fmbench_llm_tokenizer_fp"],
+                "fmbench_llm_config_fp": instance["fmbench_llm_config_fp"],
+                "fmbench_tokenizer_remote_dir": instance[
+                    "fmbench_tokenizer_remote_dir"
+                ],
+                "fmbench_complete_timeout": instance["fmbench_complete_timeout"],
+                "region": instance["region"],
+                "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
+            }
 
     logger.info("Going to Sleep for 60 seconds to make sure the instances are up")
     time.sleep(60)

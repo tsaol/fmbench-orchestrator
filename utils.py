@@ -206,6 +206,8 @@ def create_ec2_instance(
     ebs_Iops=16000,
     ebs_VolumeSize=250,
     ebs_VolumeType="gp3",
+    CapacityReservationPreference="none",
+    CapacityReservationTarget=None,
     region="us-east-1",
 ):
     """
@@ -247,10 +249,14 @@ def create_ec2_instance(
             IamInstanceProfile={  # IAM role to associate with the instance
                 "Arn": iam_arn
             },
+            CapacityReservationSpecification={
+                'CapacityReservationPreference': CapacityReservationPreference,
+                **({'CapacityReservationTarget': CapacityReservationTarget} if CapacityReservationTarget else {})
+            },
             TagSpecifications=[
                 {
                     "ResourceType": "instance",
-                    "Tags": [{"Key": "Name", "Value": "FMbench-EC2"}],
+                    "Tags": [{"Key": "Name", "Value": "FMbench-Orchestrator-EC2"}],
                 }
             ],
         )

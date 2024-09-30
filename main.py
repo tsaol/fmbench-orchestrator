@@ -59,6 +59,15 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
 
         print("Startup Script complete, executing fmbench now")
 
+        await upload_config_and_tokenizer(instance["hostname"],
+            instance["username"],
+            instance["key_file_path"],
+            instance['fmbench_llm_config_fp'],
+            instance['fmbench_llm_tokenizer_fp'],
+            instance['fmbench_tokenizer_remote_dir'])
+            
+        
+
         # Upload and execute the script on the instance
         script_output = await asyncio.get_event_loop().run_in_executor(
             executor,
@@ -140,15 +149,8 @@ if __name__ == "__main__":
         # WIP Parallelize This.
         for instance in config_data["instances"]:
             region = instance['region']
-            logger.info(f"Region Set for instance is: {region}")
-            instance_type = instance["instance_type"]
-            ami_id = instance["ami_id"]
             startup_script = instance["startup_script"]
-            device_name=instance['device_name']
-            ebs_del_on_termination=instance['ebs_del_on_termination']
-            ebs_Iops=instance['ebs_Iops']
-            ebs_VolumeSize=instance['ebs_VolumeSize']
-            ebs_VolumeType=instance['ebs_VolumeType']
+            logger.info(f"Region Set for instance is: {region}")
             if config_data["run_steps"]["security_group_creation"]:
                 logger.info(f"Creating Security Groups. getting them by name if they exist")
                 sg_id = get_sg_id(region)
@@ -156,23 +158,32 @@ if __name__ == "__main__":
             # command_to_run = instance["command_to_run"]
             with open(f"{startup_script}", "r") as file:
                 user_data_script = file.read()
-            # user_data_script += command_to_run
-            # Create an EC2 instance with the user data script
-            instance_id = create_ec2_instance(
-                PRIVATE_KEY_NAME,
-                sg_id,
-                user_data_script,
-                ami_id,
-                instance_type,
-                iam_arn,
-                device_name,
-                ebs_del_on_termination,
-                ebs_Iops,
-                ebs_VolumeSize,
-                ebs_VolumeType,
-                region
-            )
-
+            if instance.get('instance_id') is None:
+                instance_type = instance["instance_type"]
+                ami_id = instance["ami_id"]
+                device_name=instance['device_name']
+                ebs_del_on_termination=instance['ebs_del_on_termination']
+                ebs_Iops=instance['ebs_Iops']
+                ebs_VolumeSize=instance['ebs_VolumeSize']
+                ebs_VolumeType=instance['ebs_VolumeType']
+                # user_data_script += command_to_run
+                # Create an EC2 instance with the user data script
+                instance_id = create_ec2_instance(
+                    PRIVATE_KEY_NAME,
+                    sg_id,
+                    user_data_script,
+                    ami_id,
+                    instance_type,
+                    iam_arn,
+                    device_name,
+                    ebs_del_on_termination,
+                    ebs_Iops,
+                    ebs_VolumeSize,
+                    ebs_VolumeType,
+                    region
+                )
+            if instance.get('instance_id') is not None:
+                instance_id = instance['instance_id']
             instance_id_list.append(instance_id)
             instance_data_map[instance_id] = {
             "fmbench_config": instance["fmbench_config"],
@@ -188,7 +199,7 @@ if __name__ == "__main__":
             
 
     logger.info("Going to Sleep for 60 seconds to make sure the instances are up")
-    time.sleep(60)
+    # time.sleep(60)
 
     if config_data["run_steps"]["run_bash_script"]:
         instance_details = generate_instance_details(

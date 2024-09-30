@@ -504,9 +504,7 @@ def check_and_retrieve_results_folder(instance, local_folder_base):
             )
 
 
-def generate_instance_details(
-    instance_id_list, instance_data_map
-):
+def generate_instance_details(instance_id_list, instance_data_map):
     """
     Generates a list of instance details dictionaries containing hostname, username, and key file path.
 
@@ -538,13 +536,19 @@ def generate_instance_details(
             "fmbench_tokenizer_remote_dir",
             "fmbench_complete_timeout",
             "region",
-            "PRIVATE_KEY_FNAME"
+            "PRIVATE_KEY_FNAME",
         ]
 
-        missing_fields = [field for field in required_fields if field not in config_entry or config_entry[field] is None]
+        missing_fields = [
+            field
+            for field in required_fields
+            if field not in config_entry or config_entry[field] is None
+        ]
 
         if missing_fields:
-            raise ValueError(f"Missing configuration fields for instance ID {instance_id}: {', '.join(missing_fields)}")
+            raise ValueError(
+                f"Missing configuration fields for instance ID {instance_id}: {', '.join(missing_fields)}"
+            )
 
         # Extract all the necessary configuration values from the config entry
         fmbench_config = config_entry["fmbench_config"]
@@ -568,15 +572,18 @@ def generate_instance_details(
                     "instance_id": instance_id,
                     "hostname": public_hostname,
                     "username": username,
-                    "key_file_path": f"{PRIVATE_KEY_FNAME}.pem" if not PRIVATE_KEY_FNAME.endswith(".pem") else PRIVATE_KEY_FNAME,
-                    "fmbench_config": fmbench_config,
+                    "key_file_path": (
+                        f"{PRIVATE_KEY_FNAME}.pem"
+                        if not PRIVATE_KEY_FNAME.endswith(".pem")
+                        else PRIVATE_KEY_FNAME
+                    ),
+                    "config_file": fmbench_config,
                     "post_startup_script": post_startup_script,
                     "fmbench_llm_tokenizer_fp": fmbench_llm_tokenizer_fp,
                     "fmbench_llm_config_fp": fmbench_llm_config_fp,
                     "fmbench_tokenizer_remote_dir": fmbench_tokenizer_remote_dir,
                     "fmbench_complete_timeout": fmbench_complete_timeout,
-                    "region": config_entry.get("region", "us-east-1"),  
-                    # Default to passed region if not found
+                    "region": config_entry.get("region", "us-east-1"),
                 }
             )
         else:
@@ -733,11 +740,11 @@ async def download_config_async(url, download_dir="downloaded_configs"):
 
 # Asynchronous function to upload a file to the EC2 instance
 async def upload_file_to_instance_async(
-    hostname, username, key_file_path, local_path, remote_path
+    hostname, username, key_file_path, local_paths, remote_path
 ):
-    """Asynchronously uploads a file to the EC2 instance."""
+    """Asynchronously uploads multiple files to the EC2 instance."""
 
-    def upload_file():
+    def upload_files():
         try:
             # Initialize the SSH client
             ssh_client = paramiko.SSHClient()
@@ -750,44 +757,60 @@ async def upload_file_to_instance_async(
             ssh_client.connect(hostname, username=username, pkey=private_key)
             print(f"Connected to {hostname} as {username}")
 
-            # Upload the file
+            # Upload the files
             with SCPClient(ssh_client.get_transport()) as scp:
-                scp.put(local_path, remote_path)
-                print(f"Uploaded {local_path} to {hostname}:{remote_path}")
+                for local_path in local_paths:
+                    scp.put(local_path, remote_path)
+                    print(f"Uploaded {local_path} to {hostname}:{remote_path}")
 
             # Close the SSH connection
             ssh_client.close()
         except Exception as e:
-            print(f"Error uploading file to {hostname}: {e}")
+            print(f"Error uploading files to {hostname}: {e}")
 
     # Run the blocking upload operation in a separate thread
-    await asyncio.get_event_loop().run_in_executor(executor, upload_file)
+    await asyncio.get_event_loop().run_in_executor(None, upload_files)
+
+
+async def upload_config_and_tokenizer(
+    hostname, username, key_file_path, config_path, tokenizer_path, remote_path
+):
+    # List of files to upload
+    local_paths = [config_path, tokenizer_path]
+
+    # Call the asynchronous file upload function
+    await upload_file_to_instance_async(
+        hostname, username, key_file_path, local_paths, remote_path
+    )
 
 
 # Asynchronous function to handle the configuration file
 async def handle_config_file_async(instance):
     """Handles downloading and uploading of the config file based on the config type (URL or local path)."""
     config_path = instance["config_file"]
-
+    local_paths = []
     # Check if the config path is a URL
     if is_url(config_path):
         print(f"Config is a URL. Downloading from {config_path}...")
         local_config_path = await download_config_async(config_path)
+        local_paths.append(local_config_path)
     else:
         # It's a local file path, use it directly
         local_config_path = config_path
+        local_paths.append(local_config_path)
 
     # Define the remote path for the configuration file on the EC2 instance
     remote_config_path = (
         f"/home/{instance['username']}/{os.path.basename(local_config_path)}"
     )
+    print(f"remote_config_path is: {remote_config_path}...")
 
     # Upload the configuration file to the EC2 instance
     await upload_file_to_instance_async(
         instance["hostname"],
         instance["username"],
         instance["key_file_path"],
-        local_config_path,
+        local_paths,
         remote_config_path,
     )
 

@@ -187,15 +187,6 @@ def create_key_pair(key_name, region="us-east-1"):
         private_key = response["KeyMaterial"]
 
         # Save the private key to a .pem file
-        with open(f"{key_name}.pem", "w") as key_file:
-            key_file.write(private_key)
-
-        # Set the correct permissions for the .pem file
-        import os
-
-        os.chmod(f"{key_name}.pem", 0o400)  # Readable only by the owner
-
-        print(f"Key pair '{key_name}' created and saved as '{key_name}.pem'")
         return private_key
 
     except ClientError as e:
@@ -210,12 +201,12 @@ def create_ec2_instance(
     ami,
     instance_type,
     iam_arn,
-    device_name='/dev/sda/1',
+    device_name="/dev/sda/1",
     ebs_del_on_termination=True,
     ebs_Iops=16000,
     ebs_VolumeSize=250,
-    ebs_VolumeType='gp3',
-    region='us-east-1',
+    ebs_VolumeType="gp3",
+    region="us-east-1",
 ):
     """
     Create an EC2 instance with a startup script (user data) in the specified region.
@@ -327,7 +318,7 @@ def get_ec2_hostname_and_username(instance_id, region="us-east-1", public_dns=Tr
             hostname = instance.get("PrivateDnsName")
 
         # Determine the username based on the AMI ID
-        username = determine_username(ami_id)
+        username = determine_username(ami_id, region)
 
         # Return the hostname and username if available
         if hostname and username:
@@ -343,7 +334,7 @@ def get_ec2_hostname_and_username(instance_id, region="us-east-1", public_dns=Tr
         return None, None
 
 
-def determine_username(ami_id):
+def determine_username(ami_id, region):
     """
     Determine the appropriate username based on the AMI ID or name.
 
@@ -353,7 +344,7 @@ def determine_username(ami_id):
     Returns:
         str: The username for the EC2 instance.
     """
-    ec2_client = boto3.client("ec2")
+    ec2_client = boto3.client("ec2", region)
 
     try:
         # Describe the AMI to get its name
@@ -489,7 +480,7 @@ def check_and_retrieve_results_folder(instance, local_folder_base):
     hostname = instance["hostname"]
     username = instance["username"]
     key_file_path = instance["key_file_path"]
-    instance_id = instance['instance_id']
+    instance_id = instance["instance_id"]
 
     # Check for 'results-*' folders in the specified directory
     results_folders = check_for_results_folder(hostname, username, key_file_path)
@@ -498,7 +489,9 @@ def check_and_retrieve_results_folder(instance, local_folder_base):
     for folder in results_folders:
         if folder:  # Check if folder name is not empty
             # Create a local folder path for this instance
-            local_folder = os.path.join(local_folder_base, instance_id, os.path.basename(folder))
+            local_folder = os.path.join(
+                local_folder_base, instance_id, os.path.basename(folder)
+            )
             os.makedirs(
                 local_folder, exist_ok=True
             )  # Create local directory if it doesn't exist
@@ -512,15 +505,14 @@ def check_and_retrieve_results_folder(instance, local_folder_base):
 
 
 def generate_instance_details(
-    instance_id_list, key_file_path, config_map, post_startup_script, region="us-east-1"
+    instance_id_list, instance_data_map
 ):
     """
     Generates a list of instance details dictionaries containing hostname, username, and key file path.
 
     Args:
         instance_id_list (list): List of EC2 instance IDs.
-        key_file_path (str): The path to the PEM key file.
-        region (str): The AWS region where the instances are located.
+        instance_data_map (dict) : Dict of all neccessary fields
 
     Returns:
         list: A list of dictionaries containing hostname, username, and key file path for each instance.
@@ -528,37 +520,68 @@ def generate_instance_details(
     instance_details = []
 
     for instance_id in instance_id_list:
-        config_entry = next((item for item in config_map if instance_id in item), None)
-
-        
 
         # If a config entry is found, get the config path
-        if config_entry:
-            config_path = config_entry[instance_id]
+        # Directly access the instance_data_map using the instance_id
+        config_entry = instance_data_map.get(instance_id, None)
+
+        # If no config entry is found, raise an exception
+        if not config_entry:
+            raise ValueError(f"Configuration not found for instance ID: {instance_id}")
+
+        # Check if all required fields are present, raise a ValueError if any are missing
+        required_fields = [
+            "fmbench_config",
+            "post_startup_script",
+            "fmbench_llm_tokenizer_fp",
+            "fmbench_llm_config_fp",
+            "fmbench_tokenizer_remote_dir",
+            "fmbench_complete_timeout",
+            "region",
+            "PRIVATE_KEY_FNAME"
+        ]
+
+        missing_fields = [field for field in required_fields if field not in config_entry or config_entry[field] is None]
+
+        if missing_fields:
+            raise ValueError(f"Missing configuration fields for instance ID {instance_id}: {', '.join(missing_fields)}")
+
+        # Extract all the necessary configuration values from the config entry
+        fmbench_config = config_entry["fmbench_config"]
+        post_startup_script = config_entry["post_startup_script"]
+        fmbench_llm_tokenizer_fp = config_entry["fmbench_llm_tokenizer_fp"]
+        fmbench_llm_config_fp = config_entry["fmbench_llm_config_fp"]
+        fmbench_tokenizer_remote_dir = config_entry["fmbench_tokenizer_remote_dir"]
+        fmbench_complete_timeout = config_entry["fmbench_complete_timeout"]
+        region = config_entry["region"]
+        PRIVATE_KEY_FNAME = config_entry["PRIVATE_KEY_FNAME"]
+
         # Get the public hostname and username for each instance
         public_hostname, username = get_ec2_hostname_and_username(
             instance_id, region, public_dns=True
         )
 
-        script_entry = next((item for item in post_startup_script if instance_id in item), None)
-        post_start_script = script_entry[instance_id] if script_entry else None
-    
         # Append the instance details to the list if hostname and username are found
         if public_hostname and username:
             instance_details.append(
                 {
+                    "instance_id": instance_id,
                     "hostname": public_hostname,
                     "username": username,
-                    "key_file_path": key_file_path + ".pem",
-                    "config_file": config_path,
-                    "instance_id": instance_id,
-                    "post_startup_script" : post_start_script
+                    "key_file_path": f"{PRIVATE_KEY_FNAME}.pem" if not PRIVATE_KEY_FNAME.endswith(".pem") else PRIVATE_KEY_FNAME,
+                    "fmbench_config": fmbench_config,
+                    "post_startup_script": post_startup_script,
+                    "fmbench_llm_tokenizer_fp": fmbench_llm_tokenizer_fp,
+                    "fmbench_llm_config_fp": fmbench_llm_config_fp,
+                    "fmbench_tokenizer_remote_dir": fmbench_tokenizer_remote_dir,
+                    "fmbench_complete_timeout": fmbench_complete_timeout,
+                    "region": config_entry.get("region", "us-east-1"),  
+                    # Default to passed region if not found
                 }
             )
         else:
             print(
                 f"Failed to retrieve hostname and username for instance {instance_id}"
-                f"{post_start_script}"
             )
 
     return instance_details
@@ -791,6 +814,7 @@ def check_completion_flag(
         ssh_client = paramiko.SSHClient()
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
+        print(f"{key_file_path}")
         # Load the private key
         private_key = paramiko.RSAKey.from_private_key_file(key_file_path)
 

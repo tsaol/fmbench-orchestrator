@@ -13,9 +13,10 @@ from utils import *
 from constants import *
 from scp import SCPClient
 from collections import defaultdict
-from globals import get_region, get_iam_role
 from concurrent.futures import ThreadPoolExecutor
 from botocore.exceptions import NoCredentialsError, ClientError
+from globals import get_region, get_iam_role, get_sg_id, get_key_pair
+
 
 executor = ThreadPoolExecutor()
 
@@ -23,6 +24,8 @@ executor = ThreadPoolExecutor()
 instance_id_list = []
 fmbench_config_map = []
 fmbench_post_startup_script_map = []
+
+instance_data_map = {}
 
 logging.basicConfig(
     level=logging.INFO,  # Set the log level to INFO
@@ -70,7 +73,7 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
 
         # Check for the fmbench completion flag
         fmbench_complete = await asyncio.get_event_loop().run_in_executor(
-            executor, wait_for_flag, instance, 1200, 30, "/tmp/fmbench_completed.flag"
+            executor, wait_for_flag, instance, instance['fmbench_complete_timeout'], 30, "/tmp/fmbench_completed.flag"
         )
 
         if fmbench_complete:
@@ -109,7 +112,7 @@ async def main():
     await multi_deploy_fmbench(instance_details, remote_script_path)
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(name=__name__)
 
 if __name__ == "__main__":
     config_data = load_yaml_file(yaml_file_path)
@@ -127,43 +130,6 @@ if __name__ == "__main__":
     logger.info(f"read hugging face token {hf_token} from file path")
     assert len(hf_token)>4, "Hf_token is too small or invalid, please check"
 
-    logger.info(f"Creating Security Groups. Skipping if they exist")
-    if config_data["run_steps"]["security_group_creation"]:
-        GROUP_NAME = config_data["security_group"].get("group_name")
-        DESCRIPTION = config_data["security_group"].get("description", " ")
-        VPC_ID = config_data["security_group"].get("vpc_id", "")
-        try:
-            sg_id = create_security_group(GROUP_NAME, DESCRIPTION, VPC_ID)
-            logger.info(f"security group imported")
-            if sg_id:
-                # Add inbound rules if security group was created successfully
-                authorize_inbound_rules(sg_id)
-                logger.info(f"Inbound rules imported")
-        except ClientError as e:
-            logger.info(
-                f"An error occurred while creating or getting the security group: {e}"
-            )
-
-    logger.info(f"Key Pair Groups. Skipping if they exist")
-    if config_data["run_steps"]["key_pair_generation"]:
-        PRIVATE_KEY_FNAME = config_data["key_pair_gen"]["key_pair_name"]
-        try:
-            private_key = create_key_pair(PRIVATE_KEY_FNAME)
-        except:
-            PRIVATE_KEY_FNAME = config_data["key_pair_gen"]["key_pair_fpath"]
-            with open(f"{PRIVATE_KEY_FNAME}", "r") as file:
-                private_key = file.read()
-    elif config_data["run_steps"]["key_pair_generation"] == False:
-        KEY_PAIR_NAME = config_data["key_pair_gen"]["key_pair_name"]
-        PRIVATE_KEY_FNAME = config_data["key_pair_gen"]["key_pair_fpath"]
-        try:
-            with open(f"{PRIVATE_KEY_FNAME}", "r") as file:
-                private_key = file.read()
-        except FileNotFoundError:
-            print(f"File not found: {PRIVATE_KEY_FNAME}")
-        except IOError as e:
-            print(f"Error reading file {PRIVATE_KEY_FNAME}: {e}")
-
     for i in config_data["instances"]:
         logger.info(f"Instance list is as follows: {i}")
 
@@ -173,6 +139,8 @@ if __name__ == "__main__":
         print(iam_arn)
         # WIP Parallelize This.
         for instance in config_data["instances"]:
+            region = instance['region']
+            logger.info(f"Region Set for instance is: {region}")
             instance_type = instance["instance_type"]
             ami_id = instance["ami_id"]
             startup_script = instance["startup_script"]
@@ -181,13 +149,17 @@ if __name__ == "__main__":
             ebs_Iops=instance['ebs_Iops']
             ebs_VolumeSize=instance['ebs_VolumeSize']
             ebs_VolumeType=instance['ebs_VolumeType']
+            if config_data["run_steps"]["security_group_creation"]:
+                logger.info(f"Creating Security Groups. getting them by name if they exist")
+                sg_id = get_sg_id(region)
+            PRIVATE_KEY_FNAME, PRIVATE_KEY_NAME = get_key_pair(region)
             # command_to_run = instance["command_to_run"]
             with open(f"{startup_script}", "r") as file:
                 user_data_script = file.read()
             # user_data_script += command_to_run
             # Create an EC2 instance with the user data script
             instance_id = create_ec2_instance(
-                PRIVATE_KEY_FNAME,
+                PRIVATE_KEY_NAME,
                 sg_id,
                 user_data_script,
                 ami_id,
@@ -201,10 +173,18 @@ if __name__ == "__main__":
                 region
             )
 
-            # Change this in the future to something better
             instance_id_list.append(instance_id)
-            fmbench_config_map.append({instance_id: instance["fmbench_config"]})
-            fmbench_post_startup_script_map.append({instance_id: instance['post_startup_script']})
+            instance_data_map[instance_id] = {
+            "fmbench_config": instance["fmbench_config"],
+            "post_startup_script": instance["post_startup_script"],
+            "fmbench_llm_tokenizer_fp": instance["fmbench_llm_tokenizer_fp"],
+            "fmbench_llm_config_fp":instance["fmbench_llm_config_fp"],
+            "fmbench_tokenizer_remote_dir": instance["fmbench_tokenizer_remote_dir"],
+            "fmbench_complete_timeout": instance["fmbench_complete_timeout"],
+            "region": instance["region"],
+            "PRIVATE_KEY_FNAME" : PRIVATE_KEY_FNAME
+
+        }
             
 
     logger.info("Going to Sleep for 60 seconds to make sure the instances are up")
@@ -212,6 +192,6 @@ if __name__ == "__main__":
 
     if config_data["run_steps"]["run_bash_script"]:
         instance_details = generate_instance_details(
-            instance_id_list, PRIVATE_KEY_FNAME, fmbench_config_map, fmbench_post_startup_script_map, region="us-east-1"
+            instance_id_list, instance_data_map
         )  # Call the async function
         asyncio.run(main())

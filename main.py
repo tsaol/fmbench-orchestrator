@@ -96,7 +96,7 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
                 executor, check_and_retrieve_results_folder, instance, "output"
             )
             if config_data["run_steps"]["delete_ec2_instance"]:
-                delete_ec2_instance(instance["instance_id"])
+                delete_ec2_instance(instance["instance_id"], instance['region'])
                 instance_id_list.remove(instance["instance_id"])
 
 

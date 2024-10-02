@@ -10,3 +10,5 @@ __pycache__/
 output/
 downloaded_configs/
 fmbench_llm_utils/
+.venv/
+

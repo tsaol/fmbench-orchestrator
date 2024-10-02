@@ -15,7 +15,8 @@ from scp import SCPClient
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from botocore.exceptions import NoCredentialsError, ClientError
-from globals import get_region, get_iam_role, get_sg_id, get_key_pair
+from globals import (create_iam_instance_profile_arn,
+                     get_region, get_iam_role, get_sg_id, get_key_pair)
 
 
 executor = ThreadPoolExecutor()
@@ -29,7 +30,8 @@ instance_data_map = {}
 
 logging.basicConfig(
     level=logging.INFO,  # Set the log level to INFO
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",  # Define log message format
+    # Define log message format
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.FileHandler("fmbench-Orchestrator.log"),  # Log to a file
         logging.StreamHandler(),  # Also log to console
@@ -96,7 +98,8 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
                 executor, check_and_retrieve_results_folder, instance, "output"
             )
             if config_data["run_steps"]["delete_ec2_instance"]:
-                delete_ec2_instance(instance["instance_id"], instance['region'])
+                delete_ec2_instance(
+                    instance["instance_id"], instance['region'])
                 instance_id_list.remove(instance["instance_id"])
 
 
@@ -118,7 +121,8 @@ async def multi_deploy_fmbench(instance_details, remote_script_path):
         logger.info(f"{bash_script}")
 
         # Create an async task for this instance
-        tasks.append(execute_fmbench(instance, bash_script, remote_script_path))
+        tasks.append(execute_fmbench(
+            instance, bash_script, remote_script_path))
 
     # Run all tasks concurrently
     await asyncio.gather(*tasks)
@@ -137,7 +141,8 @@ if __name__ == "__main__":
     region = config_data["aws"].get("region", get_region())
 
     hf_token_fpath = config_data["aws"].get("hf_token_fpath")
-    logger.info(f"Got Hugging Face Token file path from config. {hf_token_fpath}")
+    logger.info(
+        f"Got Hugging Face Token file path from config. {hf_token_fpath}")
     logger.info("Attempting to open it")
 
     with open(hf_token_fpath) as file:
@@ -151,7 +156,8 @@ if __name__ == "__main__":
 
     logger.info(f"Deploying Ec2 Instances")
     if config_data["run_steps"]["deploy_ec2_instance"]:
-        iam_arn = config_data["aws"].get("iam_instance_profile_arn", get_iam_role())
+        iam_arn = config_data["aws"].get(
+            create_iam_instance_profile_arn(), get_iam_role())
         print(iam_arn)
         # WIP Parallelize This.
         for instance in config_data["instances"]:
@@ -176,7 +182,8 @@ if __name__ == "__main__":
                 ebs_VolumeSize = instance["ebs_VolumeSize"]
                 ebs_VolumeType = instance["ebs_VolumeType"]
                 # Retrieve CapacityReservationId and CapacityReservationResourceGroupArn if they exist
-                CapacityReservationId = instance.get("CapacityReservationId", None)
+                CapacityReservationId = instance.get(
+                    "CapacityReservationId", None)
                 CapacityReservationPreference = instance.get(
                     "CapacityReservationPreference", "none"
                 )
@@ -233,7 +240,8 @@ if __name__ == "__main__":
                 "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
             }
 
-    logger.info("Going to Sleep for 60 seconds to make sure the instances are up")
+    logger.info(
+        "Going to Sleep for 60 seconds to make sure the instances are up")
     time.sleep(60)
 
     if config_data["run_steps"]["run_bash_script"]:

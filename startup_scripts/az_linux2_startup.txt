@@ -14,4 +14,5 @@ conda create --name fmbench_python311 -y python=3.11 ipykernel
 source activate fmbench_python311;
 pip install -U fmbench
 curl -s https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/main/copy_s3_content.sh | sh -s -- /tmp
+echo "__HF_TOKEN__" > /tmp/fmbench-read/scripts/hf_token.txt
 

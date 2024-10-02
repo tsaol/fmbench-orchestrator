@@ -68,148 +68,155 @@ def get_iam_role():
 
     ROLE_NAME = arn_string.split("/")[-1]
 
-    return ROLE_NAME
+    return ROLE_NAME, arn_string
 
 
 def create_iam_instance_profile_arn():
 
     iam_client = boto3.client('iam')
-
-    policy_1 = {
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-                "Effect": "Allow",
-                "Action": [
-                    "ec2:RunInstances",
-                    "ec2:DescribeInstances",
-                    "ec2:CreateTags"
-                ],
-                "Resource": [
-                    "arn:aws:ec2:*:*:instance/*",
-                    "arn:aws:ec2:*:*:volume/*",
-                    "arn:aws:ec2:*:*:network-interface/*",
-                    "arn:aws:ec2:*:*:key-pair/*",
-                    "arn:aws:ec2:*:*:security-group/*"
-                ]
-            },
-            {
-                "Effect": "Allow",
-                "Action": [
-                    "ec2:CreateSecurityGroup",
-                    "ec2:AuthorizeSecurityGroupIngress",
-                    "ec2:AuthorizeSecurityGroupEgress",
-                    "ec2:DescribeSecurityGroups"
-                ],
-                "Resource": "*"
-            },
-            {
-                "Effect": "Allow",
-                "Action": [
-                    "ec2:CreateKeyPair",
-                    "ec2:DescribeKeyPairs"
-                ],
-                "Resource": "*"
-            }
-        ]
-    }
-
-    policy_2 = {
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-                "Effect": "Allow",
-                "Action": [
-                    "ec2:RunInstances",
-                    "ec2:TerminateInstances",
-                    "ec2:StartInstances",
-                    "ec2:StopInstances"
-                ],
-                "Resource": "arn:aws:ec2:*"
-            },
-            {
-                "Effect": "Allow",
-                "Action": [
-                    "ec2:CreateTags",
-                    "ec2:DescribeInstances",
-                    "ec2:DescribeInstanceStatus",
-                    "ec2:DescribeAddresses",
-                    "ec2:AssociateAddress",
-                    "ec2:DisassociateAddress",
-                    "ec2:DescribeRegions",
-                    "ec2:DescribeAvailabilityZones"
-                ],
-                "Resource": "*"
-            }
-        ]
-    }
-
-    policy_1_response = iam_client.create_policy(
-        PolicyName='CustomPolicy1',
-        PolicyDocument=json.dumps(policy_1)
-    )
-
-    policy_2_response = iam_client.create_policy(
-        PolicyName='CustomPolicy2',
-        PolicyDocument=json.dumps(policy_2)
-    )
-
-    # Create IAM role
-    assume_role_policy_document = {
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-                "Effect": "Allow",
-                "Principal": {
-                    "Service": "ec2.amazonaws.com"
+    try: 
+        policy_1 = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "ec2:RunInstances",
+                        "ec2:DescribeInstances",
+                        "ec2:CreateTags"
+                    ],
+                    "Resource": [
+                        "arn:aws:ec2:*:*:instance/*",
+                        "arn:aws:ec2:*:*:volume/*",
+                        "arn:aws:ec2:*:*:network-interface/*",
+                        "arn:aws:ec2:*:*:key-pair/*",
+                        "arn:aws:ec2:*:*:security-group/*"
+                    ]
                 },
-                "Action": "sts:AssumeRole"
-            }
-        ]
-    }
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "ec2:CreateSecurityGroup",
+                        "ec2:AuthorizeSecurityGroupIngress",
+                        "ec2:AuthorizeSecurityGroupEgress",
+                        "ec2:DescribeSecurityGroups"
+                    ],
+                    "Resource": "*"
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "ec2:CreateKeyPair",
+                        "ec2:DescribeKeyPairs"
+                    ],
+                    "Resource": "*"
+                }
+            ]
+        }
 
-    iam_client.create_role(
-        RoleName='FMBenchOrchestratorRole',
-        AssumeRolePolicyDocument=json.dumps(assume_role_policy_document)
-    )
+        policy_2 = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "ec2:RunInstances",
+                        "ec2:TerminateInstances",
+                        "ec2:StartInstances",
+                        "ec2:StopInstances"
+                    ],
+                    "Resource": "arn:aws:ec2:*"
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "ec2:CreateTags",
+                        "ec2:DescribeInstances",
+                        "ec2:DescribeInstanceStatus",
+                        "ec2:DescribeAddresses",
+                        "ec2:AssociateAddress",
+                        "ec2:DisassociateAddress",
+                        "ec2:DescribeRegions",
+                        "ec2:DescribeAvailabilityZones"
+                    ],
+                    "Resource": "*"
+                }
+            ]
+        }
 
-    # Attach custom policies to the role
-    iam_client.attach_role_policy(
-        RoleName='FMBenchOrchestratorRole',
-        PolicyArn=policy_1_response['Policy']['Arn']
-    )
-
-    iam_client.attach_role_policy(
-        RoleName='FMBenchOrchestratorRole',
-        PolicyArn=policy_2_response['Policy']['Arn']
-    )
-
-    # Attach managed policies to the role
-    managed_policies = [
-        'arn:aws:iam::aws:policy/AmazonSageMakerFullAccess',
-        'arn:aws:iam::aws:policy/AmazonS3FullAccess',
-        'arn:aws:iam::aws:policy/AWSCloudFormationReadOnlyAccess',
-        'arn:aws:iam::aws:policy/AmazonBedrockFullAccess'
-    ]
-
-    for policy_arn in managed_policies:
-        iam_client.attach_role_policy(
-            RoleName='FMBenchOrchestratorRole',
-            PolicyArn=policy_arn
+        policy_1_response = iam_client.create_policy(
+            PolicyName='CustomPolicy1',
+            PolicyDocument=json.dumps(policy_1)
         )
 
-    # Create instance profile
-    iam_client.create_instance_profile(
-        InstanceProfileName='FMBenchOrchestratorInstanceProfile'
-    )
+        policy_2_response = iam_client.create_policy(
+            PolicyName='CustomPolicy2',
+            PolicyDocument=json.dumps(policy_2)
+        )
 
-    # Add role to instance profile
-    iam_client.add_role_to_instance_profile(
-        InstanceProfileName='FMBenchOrchestratorInstanceProfile',
-        RoleName='FMBenchOrchestratorRole'
-    )
+        # Create IAM role
+        assume_role_policy_document = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {
+                        "Service": "ec2.amazonaws.com"
+                    },
+                    "Action": "sts:AssumeRole"
+                }
+            ]
+        }
 
-    print("Instance profile created and role attached successfully.")
+        iam_client.create_role(
+            RoleName='FMBenchOrchestratorRole',
+            AssumeRolePolicyDocument=json.dumps(assume_role_policy_document)
+        )
+
+        # Attach custom policies to the role
+        iam_client.attach_role_policy(
+            RoleName='FMBenchOrchestratorRole',
+            PolicyArn=policy_1_response['Policy']['Arn']
+        )
+
+        iam_client.attach_role_policy(
+            RoleName='FMBenchOrchestratorRole',
+            PolicyArn=policy_2_response['Policy']['Arn']
+        )
+
+        # Attach managed policies to the role
+        managed_policies = [
+            'arn:aws:iam::aws:policy/AmazonSageMakerFullAccess',
+            'arn:aws:iam::aws:policy/AmazonS3FullAccess',
+            'arn:aws:iam::aws:policy/AWSCloudFormationReadOnlyAccess',
+            'arn:aws:iam::aws:policy/AmazonBedrockFullAccess'
+        ]
+
+        for policy_arn in managed_policies:
+            iam_client.attach_role_policy(
+                RoleName='FMBenchOrchestratorRole',
+                PolicyArn=policy_arn
+            )
+
+        # Create instance profile
+        iam_client.create_instance_profile(
+            InstanceProfileName='FMBenchOrchestratorInstanceProfile'
+        )
+
+        # Add role to instance profile
+        iam_client.add_role_to_instance_profile(
+            InstanceProfileName='FMBenchOrchestratorInstanceProfile',
+            RoleName='FMBenchOrchestratorRole'
+        )
+
+        print("Instance profile created and role attached successfully.")
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "InvalidPermission.Duplicate":
+            print(
+                f"Iam instance profile already exists. Skipping..."
+            )
+        else:
+            print(f"Error creating the instance profile iam: {e}")
 
 
 def get_sg_id(region):

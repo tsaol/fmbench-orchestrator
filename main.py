@@ -224,10 +224,8 @@ if __name__ == "__main__":
                     CapacityReservationTarget,
                     region,
                 )
-            if instance.get("instance_id") is not None:
-                instance_id = instance["instance_id"]
-            instance_id_list.append(instance_id)
-            instance_data_map[instance_id] = {
+                instance_id_list.append(instance_id)
+                instance_data_map[instance_id] = {
                 "fmbench_config": instance["fmbench_config"],
                 "post_startup_script": instance["post_startup_script"],
                 "fmbench_llm_tokenizer_fpath": instance["fmbench_llm_tokenizer_fpath"],
@@ -239,6 +237,26 @@ if __name__ == "__main__":
                 "region": instance["region"],
                 "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
             }
+            if instance.get("instance_id") is not None:
+                instance_id = instance["instance_id"]
+                # TODO: Check if host machine can open the private key provided, if it cant, raise exception
+                PRIVATE_KEY_FNAME = instance["private_key_fname"]
+                if not PRIVATE_KEY_FNAME:
+                    logger.error("Private key not found, not adding instance to instance id list")
+                if PRIVATE_KEY_FNAME:
+                    instance_id_list.append(instance_id)
+                    instance_data_map[instance_id] = {
+                        "fmbench_config": instance["fmbench_config"],
+                        "post_startup_script": instance["post_startup_script"],
+                        "fmbench_llm_tokenizer_fpath": instance["fmbench_llm_tokenizer_fpath"],
+                        "fmbench_llm_config_fpath": instance["fmbench_llm_config_fpath"],
+                        "fmbench_tokenizer_remote_dir": instance[
+                            "fmbench_tokenizer_remote_dir"
+                        ],
+                        "fmbench_complete_timeout": instance["fmbench_complete_timeout"],
+                        "region": instance["region"],
+                        "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
+                    }
 
     logger.info(
         "Going to Sleep for 60 seconds to make sure the instances are up")

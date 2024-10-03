@@ -1,7 +1,7 @@
 from typing import Optional, List, Dict
 
 # Define constants
-REMOTE_SCRIPT_PATH: str = "/home/ubuntu/run_fmbench.sh"
+remote_script_path: str = "/home/ubuntu/run_fmbench.sh"
 YAML_FILE_PATH: str = "config.yml"
 DEFAULT_EC2_USERNAME: str = "ec2-user"
 

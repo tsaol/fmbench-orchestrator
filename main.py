@@ -12,6 +12,7 @@ import paramiko
 from utils import *
 from constants import *
 from scp import SCPClient
+from typing import Optional
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from botocore.exceptions import NoCredentialsError, ClientError
@@ -56,9 +57,8 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
         # Format the script with the remote config file path
         # Change this later to be a better implementation, right now it is bad.
         formatted_script = formatted_script.format(
-            hf_token=hf_token, config_file=remote_config_path
+            config_file=remote_config_path
         )
-
         print("Startup Script complete, executing fmbench now")
 
         await upload_config_and_tokenizer(
@@ -138,15 +138,18 @@ if __name__ == "__main__":
     config_data = load_yaml_file(yaml_file_path)
     logger.info(f"Loaded Config {config_data}")
 
-    region = config_data["aws"].get("region", get_region())
-
     hf_token_fpath = config_data["aws"].get("hf_token_fpath")
+    hf_token: Optional[str] = None
     logger.info(
         f"Got Hugging Face Token file path from config. {hf_token_fpath}")
     logger.info("Attempting to open it")
 
     with open(hf_token_fpath) as file:
         hf_token = file.read()
+    if hf_token is None:
+        logger.error(f"No HF token found in {hf_token_fpath}")
+    else:
+        logger.info(f"HF token found and loaded from {hf_token_fpath}")
 
     logger.info(f"read hugging face token {hf_token} from file path")
     assert len(hf_token) > 4, "Hf_token is too small or invalid, please check"
@@ -173,6 +176,8 @@ if __name__ == "__main__":
             # command_to_run = instance["command_to_run"]
             with open(f"{startup_script}", "r") as file:
                 user_data_script = file.read()
+                # Replace the hf token in the bash script to pull the HF model
+                user_data_script = user_data_script.replace("__HF_TOKEN__", hf_token)
             if instance.get("instance_id") is None:
                 instance_type = instance["instance_type"]
                 ami_id = instance["ami_id"]
@@ -190,7 +195,7 @@ if __name__ == "__main__":
                 CapacityReservationResourceGroupArn = instance.get(
                     "CapacityReservationResourceGroupArn", None
                 )
-
+        
                 # Initialize CapacityReservationTarget only if either CapacityReservationId or CapacityReservationResourceGroupArn is provided
                 CapacityReservationTarget = {}
                 if CapacityReservationId:

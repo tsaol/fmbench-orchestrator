@@ -1,4 +1,3 @@
-echo {hf_token} > /tmp/fmbench-read/scripts/hf_token.txt
 cd /home/ubuntu/foundation-model-benchmarking-tool;
 source activate fmbench_python311;
     . ~/.bashrc;

@@ -1,6 +1,7 @@
 aws:
-  # region: us-east-1
-  # iam_instance_profile_arn: arn:aws:iam::471112568442:role/FMBENCH-Orchestrator
+
+  # This is the IAM instance profile that is created
+  iam_instance_profile_arn: fmbench_orchestrator_role_new
   hf_token_fpath: /tmp/hf_token.txt
   
 
@@ -12,7 +13,7 @@ run_steps:
   delete_ec2_instance: yes
 
 security_group:
-  group_name: fmbench_orchestrator_sg
+  group_name: fmbench_orchestrator_sg_1
   description: MultiDeploy EC2 Security Group
   #If VPC Is left empty, boto3 automatically gets the default vpc for your region
   vpc_id:
@@ -21,7 +22,7 @@ key_pair_gen:
   #Need to change this name to something better?
   # This assumes that if key_pair_generation is false, you have the key pair stored in the root.
   # If so, change the file name to your KP name and the script will pick it up.
-  key_pair_name: fmbench_orchestrator
+  key_pair_name: fmbench_orchestrator_1
 
 #Instance follows the format below.
 # - instance_type: {instance_name_here}
@@ -52,11 +53,11 @@ key_pair_gen:
 # Take the below as list of dict as there might be 2 instances with the same AMI
 instances:
 - instance_type: g5.2xlarge
-  region: us-west-2
-  ami_id: ami-0ef389de7488b38d4
+  region: us-east-2
+  ami_id: ami-02640984b8ff18c56 # For us-east-1: ami-067bd563cecc90173
   device_name: /dev/sda1
   ebs_del_on_termination: True
-  ebs_Iops: 16000
+  ebs_Iops: 15900
   ebs_VolumeSize: 250
   ebs_VolumeType: gp3
   startup_script: startup_scripts/gpu_ubuntu_startup.txt
@@ -67,13 +68,12 @@ instances:
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 1200
   fmbench_config: https://raw.githubusercontent.com/dheerajoruganty/multi-deploy-ec2/refs/heads/main/configs/config-ec2-llama3-8b.yml
-
 - instance_type: g5.2xlarge
-  region: us-east-1
-  ami_id: ami-067bd563cecc90173
+  region: us-west-2
+  ami_id: ami-0ef389de7488b38d4
   device_name: /dev/sda1
   ebs_del_on_termination: True
-  ebs_Iops: 15900
+  ebs_Iops: 16000
   ebs_VolumeSize: 250
   ebs_VolumeType: gp3
   startup_script: startup_scripts/gpu_ubuntu_startup.txt

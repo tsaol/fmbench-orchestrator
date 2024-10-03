@@ -14,7 +14,6 @@ config_data = load_yaml_file(yaml_file_path)
 
 
 def get_region():
-
     session = boto3.session.Session()
     region_name = session.region_name
     if region_name is None:
@@ -36,7 +35,6 @@ def get_region():
         print(f"region_name={region_name}, also setting the AWS_DEFAULT_REGION env var")
         os.environ["AWS_DEFAULT_REGION"] = region_name
     print(f"region_name={region_name}")
-
     return region_name
 
 
@@ -74,84 +72,91 @@ def get_iam_role():
 def create_iam_instance_profile_arn():
 
     iam_client = boto3.client('iam')
+    role_name: str = 'fmbench'
+    instance_profile_arn: Optional[str] = None
+    instance_profile_role_name: str = config_data['aws'].get('iam_instance_profile_arn', 'fmbench_orchestrator_role_new')
     try: 
-        policy_1 = {
-            "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Effect": "Allow",
-                    "Action": [
-                        "ec2:RunInstances",
-                        "ec2:DescribeInstances",
-                        "ec2:CreateTags"
-                    ],
-                    "Resource": [
-                        "arn:aws:ec2:*:*:instance/*",
-                        "arn:aws:ec2:*:*:volume/*",
-                        "arn:aws:ec2:*:*:network-interface/*",
-                        "arn:aws:ec2:*:*:key-pair/*",
-                        "arn:aws:ec2:*:*:security-group/*"
-                    ]
-                },
-                {
-                    "Effect": "Allow",
-                    "Action": [
-                        "ec2:CreateSecurityGroup",
-                        "ec2:AuthorizeSecurityGroupIngress",
-                        "ec2:AuthorizeSecurityGroupEgress",
-                        "ec2:DescribeSecurityGroups"
-                    ],
-                    "Resource": "*"
-                },
-                {
-                    "Effect": "Allow",
-                    "Action": [
-                        "ec2:CreateKeyPair",
-                        "ec2:DescribeKeyPairs"
-                    ],
-                    "Resource": "*"
-                }
-            ]
-        }
+        policy = {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "ecr:GetAuthorizationToken",
+                            "ecr:BatchCheckLayerAvailability",
+                            "ecr:GetDownloadUrlForLayer",
+                            "ecr:BatchGetImage",
+                            "ecr:ListImages"
+                        ],
+                        "Resource": "*"
+                    },
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "ec2:RunInstances",
+                            "ec2:DescribeInstances",
+                            "ec2:CreateTags",
+                            "ec2:StartInstances",
+                            "ec2:StopInstances",
+                            "ec2:RebootInstances"
+                        ],
+                        "Resource": [
+                            "arn:aws:ec2:*:*:instance/*",
+                            "arn:aws:ec2:*:*:volume/*",
+                            "arn:aws:ec2:*:*:network-interface/*",
+                            "arn:aws:ec2:*:*:key-pair/*",
+                            "arn:aws:ec2:*:*:security-group/*",
+                            "arn:aws:ec2:*:*:subnet/*",
+                            "arn:aws:ec2:*:*:image/*"
+                        ]
+                    },
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "ec2:CreateSecurityGroup",
+                            "ec2:AuthorizeSecurityGroupIngress",
+                            "ec2:AuthorizeSecurityGroupEgress",
+                            "ec2:DescribeSecurityGroups"
+                        ],
+                        "Resource": "*"
+                    },
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "ec2:CreateKeyPair",
+                            "ec2:DescribeKeyPairs"
+                        ],
+                        "Resource": "*"
+                    },
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "ec2:CreateTags",
+                            "ec2:DescribeInstances",
+                            "ec2:TerminateInstances",
+                            "ec2:DescribeInstanceStatus",
+                            "ec2:DescribeAddresses",
+                            "ec2:AssociateAddress",
+                            "ec2:DisassociateAddress",
+                            "ec2:DescribeRegions",
+                            "ec2:DescribeImages",
+                            "ec2:DescribeAvailabilityZones"
+                        ],
+                        "Resource": "*"
+                    },
+                    {
+                        "Effect": "Allow",
+                        "Action": "iam:PassRole",
+                        "Resource": [
+                            f"arn:aws:iam::*:role/{role_name}*"
+                        ]
+                    }
+                ]
+            }
 
-        policy_2 = {
-            "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Effect": "Allow",
-                    "Action": [
-                        "ec2:RunInstances",
-                        "ec2:TerminateInstances",
-                        "ec2:StartInstances",
-                        "ec2:StopInstances"
-                    ],
-                    "Resource": "arn:aws:ec2:*"
-                },
-                {
-                    "Effect": "Allow",
-                    "Action": [
-                        "ec2:CreateTags",
-                        "ec2:DescribeInstances",
-                        "ec2:DescribeInstanceStatus",
-                        "ec2:DescribeAddresses",
-                        "ec2:AssociateAddress",
-                        "ec2:DisassociateAddress",
-                        "ec2:DescribeRegions",
-                        "ec2:DescribeAvailabilityZones"
-                    ],
-                    "Resource": "*"
-                }
-            ]
-        }
-
-        policy_1_response = iam_client.create_policy(
-            PolicyName='CustomPolicy1',
-            PolicyDocument=json.dumps(policy_1)
-        )
-
-        policy_2_response = iam_client.create_policy(
-            PolicyName='CustomPolicy2',
-            PolicyDocument=json.dumps(policy_2)
+        policy_response = iam_client.create_policy(
+            PolicyName='CustomPolicy',
+            PolicyDocument=json.dumps(policy)
         )
 
         # Create IAM role
@@ -167,21 +172,15 @@ def create_iam_instance_profile_arn():
                 }
             ]
         }
-
+        
         iam_client.create_role(
-            RoleName='FMBenchOrchestratorRole',
+            RoleName=instance_profile_role_name,
             AssumeRolePolicyDocument=json.dumps(assume_role_policy_document)
         )
 
-        # Attach custom policies to the role
         iam_client.attach_role_policy(
-            RoleName='FMBenchOrchestratorRole',
-            PolicyArn=policy_1_response['Policy']['Arn']
-        )
-
-        iam_client.attach_role_policy(
-            RoleName='FMBenchOrchestratorRole',
-            PolicyArn=policy_2_response['Policy']['Arn']
+            RoleName=instance_profile_role_name,
+            PolicyArn=policy_response['Policy']['Arn']
         )
 
         # Attach managed policies to the role
@@ -194,29 +193,34 @@ def create_iam_instance_profile_arn():
 
         for policy_arn in managed_policies:
             iam_client.attach_role_policy(
-                RoleName='FMBenchOrchestratorRole',
+                RoleName=instance_profile_role_name,
                 PolicyArn=policy_arn
             )
 
         # Create instance profile
-        iam_client.create_instance_profile(
-            InstanceProfileName='FMBenchOrchestratorInstanceProfile'
+        instance_profile_info = iam_client.create_instance_profile(
+            InstanceProfileName='FMBenchOrchestratorInstanceProfile_new'
         )
+
+        if instance_profile_info is not None: 
+            logger.info(f"Instance profile created: {instance_profile_info}")
+            instance_profile_arn = instance_profile_info['InstanceProfile'].get('Arn')
 
         # Add role to instance profile
         iam_client.add_role_to_instance_profile(
-            InstanceProfileName='FMBenchOrchestratorInstanceProfile',
-            RoleName='FMBenchOrchestratorRole'
+            InstanceProfileName='FMBenchOrchestratorInstanceProfile_new',
+            RoleName=instance_profile_role_name,
         )
 
         print("Instance profile created and role attached successfully.")
+        return instance_profile_arn
     except ClientError as e:
         if e.response["Error"]["Code"] == "InvalidPermission.Duplicate":
-            print(
+            logger.info(
                 f"Iam instance profile already exists. Skipping..."
             )
         else:
-            print(f"Error creating the instance profile iam: {e}")
+            logger.error(f"Error creating the instance profile iam: {e}")
 
 
 def get_sg_id(region):

@@ -512,7 +512,7 @@ def check_and_retrieve_results_folder(instance: Dict,
         logger.error(f"Error occured while attempting to check and retrieve results from the instances: {e}")
 
 
-def generate_instance_details(instance_id_list: List, instance_data_map: Dict) -> List:
+def generate_instance_details(instance_id_list, instance_data_map):
     """
     Generates a list of instance details dictionaries containing hostname, username, and key file path.
 
@@ -523,43 +523,82 @@ def generate_instance_details(instance_id_list: List, instance_data_map: Dict) -
     Returns:
         list: A list of dictionaries containing hostname, username, and key file path for each instance.
     """
-    try:
-        instance_details: Optional[List] = []
-        for instance_id in instance_id_list:
-            # If a config entry is found, get the config path
-            # Directly access the instance_data_map using the instance_id
-            config_entry = instance_data_map.get(instance_id, None)
-            # If no config entry is found, raise an exception
-            if not config_entry:
-                raise ValueError(f"Configuration not found for instance ID: {instance_id}")
-            # Check if all required fields are present, raise a ValueError if any are missing
-            required_fields = ["fmbench_config", "post_startup_script", "fmbench_llm_tokenizer_fpath",
-                                "fmbench_llm_config_fpath", "fmbench_tokenizer_remote_dir", "fmbench_complete_timeout",
-                                "region", "PRIVATE_KEY_FNAME",]
-            missing_fields = [field for field in required_fields if not config_entry.get(field)]
-            if missing_fields:
-                raise ValueError(f"Missing configuration fields for instance ID {instance_id}: {', '.join(missing_fields)}")
-            # Retrieve the hostname and username
-            public_hostname, username = _get_ec2_hostname_and_username(instance_id, config_entry["region"], public_dns=True)
-        
-        if not (public_hostname and username):
-            logger.error(f"Failed to retrieve hostname and username for instance {instance_id}")
+    instance_details = []
 
-        key_file_path = f"{config_entry['PRIVATE_KEY_FNAME']}.pem" if not config_entry['PRIVATE_KEY_FNAME'].endswith(".pem") else config_entry['PRIVATE_KEY_FNAME']
+    for instance_id in instance_id_list:
 
-        instance_details.append({
-            "instance_id": instance_id,
-            "hostname": public_hostname,
-            "username": username,
-            "key_file_path": key_file_path,
-            **{field: config_entry[field] for field in required_fields if field != "PRIVATE_KEY_FNAME"},
-            "region": config_entry.get("region", "us-east-1"),
-        })
-    except Exception as e:
-        logger.error(f"Error generating instance details: {e}")
-        instance_details=None
+        # If a config entry is found, get the config path
+        # Directly access the instance_data_map using the instance_id
+        config_entry = instance_data_map.get(instance_id, None)
+
+        # If no config entry is found, raise an exception
+        if not config_entry:
+            raise ValueError(f"Configuration not found for instance ID: {instance_id}")
+
+        # Check if all required fields are present, raise a ValueError if any are missing
+        required_fields = [
+            "fmbench_config",
+            "post_startup_script",
+            "fmbench_llm_tokenizer_fpath",
+            "fmbench_llm_config_fpath",
+            "fmbench_tokenizer_remote_dir",
+            "fmbench_complete_timeout",
+            "region",
+            "PRIVATE_KEY_FNAME",
+        ]
+
+        missing_fields = [
+            field
+            for field in required_fields
+            if field not in config_entry or config_entry[field] is None
+        ]
+
+        if missing_fields:
+            raise ValueError(
+                f"Missing configuration fields for instance ID {instance_id}: {', '.join(missing_fields)}"
+            )
+
+        # Extract all the necessary configuration values from the config entry
+        fmbench_config = config_entry["fmbench_config"]
+        post_startup_script = config_entry["post_startup_script"]
+        fmbench_llm_tokenizer_fpath = config_entry["fmbench_llm_tokenizer_fpath"]
+        fmbench_llm_config_fpath = config_entry["fmbench_llm_config_fpath"]
+        fmbench_tokenizer_remote_dir = config_entry["fmbench_tokenizer_remote_dir"]
+        fmbench_complete_timeout = config_entry["fmbench_complete_timeout"]
+        region = config_entry["region"]
+        PRIVATE_KEY_FNAME = config_entry["PRIVATE_KEY_FNAME"]
+
+        # Get the public hostname and username for each instance
+        public_hostname, username = _get_ec2_hostname_and_username(
+            instance_id, region, public_dns=True
+        )
+
+        # Append the instance details to the list if hostname and username are found
+        if public_hostname and username:
+            instance_details.append(
+                {
+                    "instance_id": instance_id,
+                    "hostname": public_hostname,
+                    "username": username,
+                    "key_file_path": (
+                        f"{PRIVATE_KEY_FNAME}.pem"
+                        if not PRIVATE_KEY_FNAME.endswith(".pem")
+                        else PRIVATE_KEY_FNAME
+                    ),
+                    "config_file": fmbench_config,
+                    "post_startup_script": post_startup_script,
+                    "fmbench_llm_tokenizer_fpath": fmbench_llm_tokenizer_fpath,
+                    "fmbench_llm_config_fpath": fmbench_llm_config_fpath,
+                    "fmbench_tokenizer_remote_dir": fmbench_tokenizer_remote_dir,
+                    "fmbench_complete_timeout": fmbench_complete_timeout,
+                    "region": config_entry.get("region", "us-east-1"),
+                }
+            )
+        else:
+            print(
+                f"Failed to retrieve hostname and username for instance {instance_id}"
+            )
     return instance_details
-
 
 def run_command_on_instances(instance_details: List, key_file_path: str, command: str) -> Dict:
     """

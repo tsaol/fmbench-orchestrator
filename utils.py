@@ -595,7 +595,7 @@ def generate_instance_details(instance_id_list, instance_data_map):
                 }
             )
         else:
-            print(
+            logger.error(
                 f"Failed to retrieve hostname and username for instance {instance_id}"
             )
     return instance_details
@@ -642,7 +642,7 @@ def upload_and_execute_script_invoke_shell(hostname: str,
                                             username: str, 
                                             key_file_path: str, 
                                             script_content: str, 
-                                            remote_script_path=REMOTE_SCRIPT_PATH) -> str:
+                                            remote_script_path) -> str:
     """
     Uploads a bash script to the EC2 instance and executes it via an interactive SSH shell.
 
@@ -668,6 +668,7 @@ def upload_and_execute_script_invoke_shell(hostname: str,
             with ssh_client.open_sftp() as sftp:
                 with sftp.open(remote_script_path, "w") as remote_file:
                     remote_file.write(script_content)
+                sftp.close()
             logger.info(f"Script uploaded to {remote_script_path}")
 
             with ssh_client.invoke_shell() as shell:
@@ -682,6 +683,9 @@ def upload_and_execute_script_invoke_shell(hostname: str,
                 while shell.recv_ready():
                     output += shell.recv(1024).decode("utf-8")
                     time.sleep(2)  # Allow time for the command output to be captured
+                # Close the shell and connection
+                shell.close()
+                ssh_client.close()
     except Exception as e:
         logger.error(f"Error connecting via SSH to {hostname}: {e}")
         output=""

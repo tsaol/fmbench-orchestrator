@@ -541,9 +541,6 @@ def generate_instance_details(instance_id_list, instance_data_map):
         required_fields = [
             "fmbench_config",
             "post_startup_script",
-            "fmbench_llm_tokenizer_fpath",
-            "fmbench_llm_config_fpath",
-            "fmbench_tokenizer_remote_dir",
             "fmbench_complete_timeout",
             "region",
             "PRIVATE_KEY_FNAME",
@@ -563,9 +560,9 @@ def generate_instance_details(instance_id_list, instance_data_map):
         # Extract all the necessary configuration values from the config entry
         fmbench_config = config_entry["fmbench_config"]
         post_startup_script = config_entry["post_startup_script"]
-        fmbench_llm_tokenizer_fpath = config_entry["fmbench_llm_tokenizer_fpath"]
-        fmbench_llm_config_fpath = config_entry["fmbench_llm_config_fpath"]
-        fmbench_tokenizer_remote_dir = config_entry["fmbench_tokenizer_remote_dir"]
+        fmbench_llm_tokenizer_fpath = config_entry.get("fmbench_llm_tokenizer_fpath")
+        fmbench_llm_config_fpath = config_entry.get("fmbench_llm_config_fpath")
+        fmbench_tokenizer_remote_dir = config_entry.get("fmbench_tokenizer_remote_dir")
         fmbench_complete_timeout = config_entry["fmbench_complete_timeout"]
         region = config_entry["region"]
         PRIVATE_KEY_FNAME = config_entry["PRIVATE_KEY_FNAME"]
@@ -793,6 +790,16 @@ async def upload_config_and_tokenizer(
         hostname, username, key_file_path, local_paths, remote_path
     )
 
+async def upload_pricing(
+    hostname, username, key_file_path, pricing_path, remote_path
+):
+    # List of files to upload
+    local_paths = [pricing_path]
+
+    # Call the asynchronous file upload function
+    await upload_file_to_instance_async(
+        hostname, username, key_file_path, local_paths, remote_path
+    )
 
 # Asynchronous function to handle the configuration file
 async def handle_config_file_async(instance):

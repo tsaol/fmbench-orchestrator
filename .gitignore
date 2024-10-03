@@ -11,4 +11,5 @@ output/
 downloaded_configs/
 fmbench_llm_utils/
 .venv/
+configs/
 

@@ -660,7 +660,7 @@ def upload_and_execute_script_invoke_shell(hostname: str,
     output: str = ""
     try:
         with paramiko.SSHClient() as ssh_client:
-            ssh_client.set_missing_host_key_policy(paramiko.RejectPolicy())
+            ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             private_key = paramiko.RSAKey.from_private_key_file(key_file_path)
             ssh_client.connect(hostname, username=username, pkey=private_key)
             logger.info(f"Connected to {hostname} as {username}")

@@ -116,7 +116,7 @@ async def multi_deploy_fmbench(instance_details, remote_script_path):
             bash_script = file.read()
 
         logger.info("Read Bash Script")
-        logger.info(f"{bash_script}")
+        logger.info(f"Post startup script is: {bash_script}")
 
         # Create an async task for this instance
         tasks.append(execute_fmbench(
@@ -127,7 +127,7 @@ async def multi_deploy_fmbench(instance_details, remote_script_path):
 
 
 async def main():
-    await multi_deploy_fmbench(instance_details, REMOTE_SCRIPT_PATH)
+    await multi_deploy_fmbench(instance_details, remote_script_path)
 
 
 logger = logging.getLogger(name=__name__)

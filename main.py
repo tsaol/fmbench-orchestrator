@@ -59,14 +59,16 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
         )
         print("Startup Script complete, executing fmbench now")
 
-        await upload_config_and_tokenizer(
-            instance["hostname"],
-            instance["username"],
-            instance["key_file_path"],
-            instance["fmbench_llm_config_fpath"],
-            instance["fmbench_llm_tokenizer_fpath"],
-            instance["fmbench_tokenizer_remote_dir"],
-        )
+        if instance["fmbench_llm_config_fpath"]:
+            logger.info("Going to use custom tokenizer and config")
+            await upload_config_and_tokenizer(
+                instance["hostname"],
+                instance["username"],
+                instance["key_file_path"],
+                instance["fmbench_llm_config_fpath"],
+                instance["fmbench_llm_tokenizer_fpath"],
+                instance["fmbench_tokenizer_remote_dir"],
+            )
 
         # Upload and execute the script on the instance
         script_output = await asyncio.get_event_loop().run_in_executor(
@@ -157,8 +159,9 @@ if __name__ == "__main__":
 
     logger.info(f"Deploying Ec2 Instances")
     if config_data["run_steps"]["deploy_ec2_instance"]:
-        iam_role_name, iam_arn = config_data["aws"].get(
-            create_iam_instance_profile_arn(), get_iam_role())
+        iam_arn = config_data["aws"].get(
+            get_iam_role(), create_iam_instance_profile_arn()
+        )
         logger.info(f"iam arn: {iam_arn}")
         # WIP Parallelize This.
         for instance in config_data["instances"]:
@@ -229,16 +232,20 @@ if __name__ == "__main__":
                 instance_id_list.append(instance_id)
                 instance_data_map[instance_id] = {
                 "fmbench_config": instance["fmbench_config"],
-                "post_startup_script": instance["post_startup_script"],
-                "fmbench_llm_tokenizer_fpath": instance["fmbench_llm_tokenizer_fpath"],
-                "fmbench_llm_config_fpath": instance["fmbench_llm_config_fpath"],
-                "fmbench_tokenizer_remote_dir": instance[
-                    "fmbench_tokenizer_remote_dir"
-                ],
-                "fmbench_complete_timeout": instance["fmbench_complete_timeout"],
-                "region": instance["region"],
-                "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
-            }
+                    "post_startup_script": instance["post_startup_script"],
+                    "fmbench_llm_tokenizer_fpath": instance.get(
+                        "fmbench_llm_tokenizer_fpath"
+                    ),
+                    "fmbench_llm_config_fpath": instance.get(
+                        "fmbench_llm_config_fpath"
+                    ),
+                    "fmbench_tokenizer_remote_dir": instance.get(
+                        "fmbench_tokenizer_remote_dir"
+                    ),
+                    "fmbench_complete_timeout": instance["fmbench_complete_timeout"],
+                    "region": instance["region"],
+                    "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
+                }
             if instance.get("instance_id") is not None:
                 instance_id = instance["instance_id"]
                 # TODO: Check if host machine can open the private key provided, if it cant, raise exception

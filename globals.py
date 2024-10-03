@@ -42,7 +42,7 @@ def get_region() -> str:
     return region_name
 
 
-def get_iam_role() -> Tuple:
+def get_iam_role() -> str:
     try:
         caller = boto3.client("sts").get_caller_identity()
         account_id = caller.get("Account")
@@ -70,97 +70,93 @@ def get_iam_role() -> Tuple:
         role_name = arn_string.split("/")[-1]
     except Exception as e: 
         logger.error(f"Could not fetch the role name or arn_string: {e}")
-        role_name, arn_string=None, None
-    return role_name, arn_string
+        arn_string=None
+    return arn_string
 
 
 def create_iam_instance_profile_arn():
     iam_client = boto3.client('iam')
     role_name: str = 'fmbench'
     instance_profile_arn: Optional[str] = None
-    instance_profile_role_name: str = config_data['aws'].get('iam_instance_profile_arn', 'fmbench_orchestrator_role_new')
+    instance_profile_role_name: str = config_data["aws"].get(
+        "iam_instance_profile_arn", "fmbench_orchestrator_role_new"
+    )
     try: 
         policy = {
                 "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "ecr:GetAuthorizationToken",
-                            "ecr:BatchCheckLayerAvailability",
-                            "ecr:GetDownloadUrlForLayer",
-                            "ecr:BatchGetImage",
-                            "ecr:ListImages"
-                        ],
-                        "Resource": "*"
-                    },
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "ec2:RunInstances",
-                            "ec2:DescribeInstances",
-                            "ec2:CreateTags",
-                            "ec2:StartInstances",
-                            "ec2:StopInstances",
-                            "ec2:RebootInstances"
-                        ],
-                        "Resource": [
-                            "arn:aws:ec2:*:*:instance/*",
-                            "arn:aws:ec2:*:*:volume/*",
-                            "arn:aws:ec2:*:*:network-interface/*",
-                            "arn:aws:ec2:*:*:key-pair/*",
-                            "arn:aws:ec2:*:*:security-group/*",
-                            "arn:aws:ec2:*:*:subnet/*",
-                            "arn:aws:ec2:*:*:image/*"
-                        ]
-                    },
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "ec2:CreateSecurityGroup",
-                            "ec2:AuthorizeSecurityGroupIngress",
-                            "ec2:AuthorizeSecurityGroupEgress",
-                            "ec2:DescribeSecurityGroups"
-                        ],
-                        "Resource": "*"
-                    },
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "ec2:CreateKeyPair",
-                            "ec2:DescribeKeyPairs"
-                        ],
-                        "Resource": "*"
-                    },
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "ec2:CreateTags",
-                            "ec2:DescribeInstances",
-                            "ec2:TerminateInstances",
-                            "ec2:DescribeInstanceStatus",
-                            "ec2:DescribeAddresses",
-                            "ec2:AssociateAddress",
-                            "ec2:DisassociateAddress",
-                            "ec2:DescribeRegions",
-                            "ec2:DescribeImages",
-                            "ec2:DescribeAvailabilityZones"
-                        ],
-                        "Resource": "*"
-                    },
-                    {
-                        "Effect": "Allow",
-                        "Action": "iam:PassRole",
-                        "Resource": [
-                            f"arn:aws:iam::*:role/{role_name}*"
-                        ]
-                    }
-                ]
-            }
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "ecr:GetAuthorizationToken",
+                        "ecr:BatchCheckLayerAvailability",
+                        "ecr:GetDownloadUrlForLayer",
+                        "ecr:BatchGetImage",
+                        "ecr:ListImages",
+                    ],
+                    "Resource": "*",
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "ec2:RunInstances",
+                        "ec2:DescribeInstances",
+                        "ec2:CreateTags",
+                        "ec2:StartInstances",
+                        "ec2:StopInstances",
+                        "ec2:RebootInstances",
+                    ],
+                    "Resource": [
+                        "arn:aws:ec2:*:*:instance/*",
+                        "arn:aws:ec2:*:*:volume/*",
+                        "arn:aws:ec2:*:*:network-interface/*",
+                        "arn:aws:ec2:*:*:key-pair/*",
+                        "arn:aws:ec2:*:*:security-group/*",
+                        "arn:aws:ec2:*:*:subnet/*",
+                        "arn:aws:ec2:*:*:image/*",
+                    ],
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "ec2:CreateSecurityGroup",
+                        "ec2:AuthorizeSecurityGroupIngress",
+                        "ec2:AuthorizeSecurityGroupEgress",
+                        "ec2:DescribeSecurityGroups",
+                    ],
+                    "Resource": "*",
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": ["ec2:CreateKeyPair", "ec2:DescribeKeyPairs"],
+                    "Resource": "*",
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "ec2:CreateTags",
+                        "ec2:DescribeInstances",
+                        "ec2:TerminateInstances",
+                        "ec2:DescribeInstanceStatus",
+                        "ec2:DescribeAddresses",
+                        "ec2:AssociateAddress",
+                        "ec2:DisassociateAddress",
+                        "ec2:DescribeRegions",
+                        "ec2:DescribeImages",
+                        "ec2:DescribeAvailabilityZones",
+                    ],
+                    "Resource": "*",
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": "iam:PassRole",
+                    "Resource": [f"arn:aws:iam::*:role/{role_name}*"],
+                },
+            ],
+        }
 
         policy_response = iam_client.create_policy(
-            PolicyName='CustomPolicy',
-            PolicyDocument=json.dumps(policy)
+            PolicyName='CustomPolicy', PolicyDocument=json.dumps(policy)
         )
 
         # Create IAM role

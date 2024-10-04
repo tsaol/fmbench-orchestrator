@@ -745,6 +745,18 @@ async def upload_config_and_tokenizer(
         hostname, username, key_file_path, local_paths, remote_path
     )
 
+
+async def upload_pricing(
+    hostname, username, key_file_path, pricing_path, remote_path
+):
+    # List of files to upload
+    local_paths = [pricing_path]
+
+    # Call the asynchronous file upload function
+    await upload_file_to_instance_async(
+        hostname, username, key_file_path, local_paths, remote_path
+    )
+
 # Asynchronous function to handle the configuration file
 async def handle_config_file_async(instance):
     """Handles downloading and uploading of the config file based on the config type (URL or local path)."""

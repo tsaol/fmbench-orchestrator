@@ -26,3 +26,10 @@ FMBENCH_RESULTS_FOLDER_PATTERN: str = "/home/ubuntu/foundation-model-benchmarkin
 # flag related variables
 STARTUP_COMPLETE_FLAG_FPATH: str = "/tmp/startup_complete.flag"
 FMBENCH_TEST_COMPLETE_FLAG_FPATH: str = "/tmp/fmbench_completed.flag"
+
+AMI_NAME_MAP = {
+    "gpu": "Deep Learning OSS Nvidia Driver AMI GPU PyTorch 2.4 (Ubuntu 22.04)",
+    "neuron": "Deep Learning AMI Neuron (Ubuntu 22.04)",
+    "cpu": "Amazon Linux 2 AMI (HVM) - Kernel 5.10, SSD Volume Type",
+}
+

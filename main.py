@@ -16,8 +16,13 @@ from typing import Optional, List
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from botocore.exceptions import NoCredentialsError, ClientError
-from globals import (create_iam_instance_profile_arn,
-                     get_region, get_iam_role, get_sg_id, get_key_pair)
+from globals import (
+    create_iam_instance_profile_arn,
+    get_region,
+    get_iam_role,
+    get_sg_id,
+    get_key_pair,
+)
 
 
 executor = ThreadPoolExecutor()
@@ -54,9 +59,7 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
         remote_config_path = await handle_config_file_async(instance)
         # Format the script with the remote config file path
         # Change this later to be a better implementation, right now it is bad.
-        formatted_script = formatted_script.format(
-            config_file=remote_config_path
-        )
+        formatted_script = formatted_script.format(config_file=remote_config_path)
         print("Startup Script complete, executing fmbench now")
 
         if instance["fmbench_llm_config_fpath"]:
@@ -98,8 +101,7 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
                 executor, check_and_retrieve_results_folder, instance, "output"
             )
             if config_data["run_steps"]["delete_ec2_instance"]:
-                delete_ec2_instance(
-                    instance["instance_id"], instance['region'])
+                delete_ec2_instance(instance["instance_id"], instance["region"])
                 instance_id_list.remove(instance["instance_id"])
 
 
@@ -121,8 +123,7 @@ async def multi_deploy_fmbench(instance_details, remote_script_path):
         logger.info(f"Post startup script is: {bash_script}")
 
         # Create an async task for this instance
-        tasks.append(execute_fmbench(
-            instance, bash_script, remote_script_path))
+        tasks.append(execute_fmbench(instance, bash_script, remote_script_path))
 
     # Run all tasks concurrently
     await asyncio.gather(*tasks)
@@ -140,8 +141,7 @@ if __name__ == "__main__":
 
     hf_token_fpath = config_data["aws"].get("hf_token_fpath")
     hf_token: Optional[str] = None
-    logger.info(
-        f"Got Hugging Face Token file path from config. {hf_token_fpath}")
+    logger.info(f"Got Hugging Face Token file path from config. {hf_token_fpath}")
     logger.info("Attempting to open it")
 
     with open(hf_token_fpath) as file:
@@ -159,7 +159,11 @@ if __name__ == "__main__":
 
     logger.info(f"Deploying Ec2 Instances")
     if config_data["run_steps"]["deploy_ec2_instance"]:
-        iam_arn = get_iam_role()
+
+        iam_arn = config_data["aws"].get(
+            get_iam_role(), create_iam_instance_profile_arn()
+        )
+
         logger.info(f"iam arn: {iam_arn}")
         # WIP Parallelize This.
         for instance in config_data["instances"]:
@@ -186,15 +190,14 @@ if __name__ == "__main__":
                 ebs_VolumeSize = instance["ebs_VolumeSize"]
                 ebs_VolumeType = instance["ebs_VolumeType"]
                 # Retrieve CapacityReservationId and CapacityReservationResourceGroupArn if they exist
-                CapacityReservationId = instance.get(
-                    "CapacityReservationId", None)
+                CapacityReservationId = instance.get("CapacityReservationId", None)
                 CapacityReservationPreference = instance.get(
                     "CapacityReservationPreference", "none"
                 )
                 CapacityReservationResourceGroupArn = instance.get(
                     "CapacityReservationResourceGroupArn", None
                 )
-        
+
                 # Initialize CapacityReservationTarget only if either CapacityReservationId or CapacityReservationResourceGroupArn is provided
                 CapacityReservationTarget = {}
                 if CapacityReservationId:
@@ -229,7 +232,9 @@ if __name__ == "__main__":
                     CapacityReservationTarget)
                 instance_id_list.append(instance_id)
                 instance_data_map[instance_id] = {
+
                 "fmbench_config": instance["fmbench_config"],
+
                     "post_startup_script": instance["post_startup_script"],
                     "fmbench_llm_tokenizer_fpath": instance.get(
                         "fmbench_llm_tokenizer_fpath"
@@ -249,24 +254,31 @@ if __name__ == "__main__":
                 # TODO: Check if host machine can open the private key provided, if it cant, raise exception
                 PRIVATE_KEY_FNAME = instance["private_key_fname"]
                 if not PRIVATE_KEY_FNAME:
-                    logger.error("Private key not found, not adding instance to instance id list")
+                    logger.error(
+                        "Private key not found, not adding instance to instance id list"
+                    )
                 if PRIVATE_KEY_FNAME:
                     instance_id_list.append(instance_id)
                     instance_data_map[instance_id] = {
                         "fmbench_config": instance["fmbench_config"],
                         "post_startup_script": instance["post_startup_script"],
-                        "fmbench_llm_tokenizer_fpath": instance["fmbench_llm_tokenizer_fpath"],
-                        "fmbench_llm_config_fpath": instance["fmbench_llm_config_fpath"],
+                        "fmbench_llm_tokenizer_fpath": instance[
+                            "fmbench_llm_tokenizer_fpath"
+                        ],
+                        "fmbench_llm_config_fpath": instance[
+                            "fmbench_llm_config_fpath"
+                        ],
                         "fmbench_tokenizer_remote_dir": instance[
                             "fmbench_tokenizer_remote_dir"
                         ],
-                        "fmbench_complete_timeout": instance["fmbench_complete_timeout"],
+                        "fmbench_complete_timeout": instance[
+                            "fmbench_complete_timeout"
+                        ],
                         "region": instance["region"],
                         "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
                     }
 
-    logger.info(
-        "Going to Sleep for 60 seconds to make sure the instances are up")
+    logger.info("Going to Sleep for 60 seconds to make sure the instances are up")
     time.sleep(60)
 
     if config_data["run_steps"]["run_bash_script"]:

@@ -160,10 +160,25 @@ if __name__ == "__main__":
     logger.info(f"Deploying Ec2 Instances")
     if config_data["run_steps"]["deploy_ec2_instance"]:
 
-        iam_arn = config_data["aws"].get(
-            get_iam_role(), create_iam_instance_profile_arn()
-        )
+        if config_data["run_steps"]['create_iam_role']:
+            try:
+                iam_arn = create_iam_instance_profile_arn()
+            except Exception as e:
+                logger.error(f"Cannot create IAM Role due to exception {e}")
+                logger.info("Going to get iam role from the current instance")
+                iam_arn = get_iam_role()
+        
+        else:
+            try:
+                iam_arn = get_iam_role()
+            except Exception as e:
+                logger.error(f"Cannot get IAM Role due to exception {e}")
 
+        if not iam_arn:
+            raise NoCredentialsError("""Unable to locate credentials,
+                                        Please check if an IAM role is 
+                                        attched to your instance.""")
+        
         logger.info(f"iam arn: {iam_arn}")
         # WIP Parallelize This.
         for instance in config_data["instances"]:
@@ -260,23 +275,23 @@ if __name__ == "__main__":
                 if PRIVATE_KEY_FNAME:
                     instance_id_list.append(instance_id)
                     instance_data_map[instance_id] = {
-                        "fmbench_config": instance["fmbench_config"],
-                        "post_startup_script": instance["post_startup_script"],
-                        "fmbench_llm_tokenizer_fpath": instance[
-                            "fmbench_llm_tokenizer_fpath"
-                        ],
-                        "fmbench_llm_config_fpath": instance[
-                            "fmbench_llm_config_fpath"
-                        ],
-                        "fmbench_tokenizer_remote_dir": instance[
-                            "fmbench_tokenizer_remote_dir"
-                        ],
-                        "fmbench_complete_timeout": instance[
-                            "fmbench_complete_timeout"
-                        ],
-                        "region": instance["region"],
-                        "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
-                    }
+
+                "fmbench_config": instance["fmbench_config"],
+
+                    "post_startup_script": instance["post_startup_script"],
+                    "fmbench_llm_tokenizer_fpath": instance.get(
+                        "fmbench_llm_tokenizer_fpath"
+                    ),
+                    "fmbench_llm_config_fpath": instance.get(
+                        "fmbench_llm_config_fpath"
+                    ),
+                    "fmbench_tokenizer_remote_dir": instance.get(
+                        "fmbench_tokenizer_remote_dir"
+                    ),
+                    "fmbench_complete_timeout": instance["fmbench_complete_timeout"],
+                    "region": instance["region"],
+                    "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
+                }
 
     logger.info("Going to Sleep for 60 seconds to make sure the instances are up")
     time.sleep(60)

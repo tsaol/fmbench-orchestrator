@@ -160,10 +160,25 @@ if __name__ == "__main__":
     logger.info(f"Deploying Ec2 Instances")
     if config_data["run_steps"]["deploy_ec2_instance"]:
 
-        iam_arn = config_data["aws"].get(
-            get_iam_role(), create_iam_instance_profile_arn()
-        )
+        if config_data["run_steps"]['create_iam_role']:
+            try:
+                iam_arn = create_iam_instance_profile_arn()
+            except Exception as e:
+                logger.error(f"Cannot create IAM Role due to exception {e}")
+                logger.info("Going to get iam role from the current instance")
+                iam_arn = get_iam_role()
+        
+        else:
+            try:
+                iam_arn = get_iam_role()
+            except Exception as e:
+                logger.error(f"Cannot get IAM Role due to exception {e}")
 
+        if not iam_arn:
+            raise NoCredentialsError("""Unable to locate credentials,
+                                        Please check if an IAM role is 
+                                        attched to your instance.""")
+        
         logger.info(f"iam arn: {iam_arn}")
         # WIP Parallelize This.
         for instance in config_data["instances"]:

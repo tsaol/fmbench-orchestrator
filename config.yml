@@ -16,6 +16,7 @@ run_steps:
   security_group_creation: yes
   key_pair_generation: yes
   deploy_ec2_instance: yes
+  create_iam_role: no
   run_bash_script: yes
   delete_ec2_instance: yes
 
@@ -73,8 +74,8 @@ key_pair_gen:
 instances:
 
 - instance_type: g6e.2xlarge
-  region: us-east-2
-  ami_id: ami-02640984b8ff18c56
+  region: us-east-1
+  ami_id: ami-067bd563cecc90173
   device_name: /dev/sda1
   ebs_del_on_termination: True
   ebs_Iops: 16000
@@ -83,6 +84,6 @@ instances:
   startup_script: startup_scripts/gpu_ubuntu_startup.txt
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
-  fmbench_complete_timeout: 1200
+  fmbench_complete_timeout: 1800
   fmbench_config: configs/config-ec2-llama3-8b-g6e-2xl.yml
 

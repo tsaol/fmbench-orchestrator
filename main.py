@@ -275,23 +275,23 @@ if __name__ == "__main__":
                 if PRIVATE_KEY_FNAME:
                     instance_id_list.append(instance_id)
                     instance_data_map[instance_id] = {
-                        "fmbench_config": instance["fmbench_config"],
-                        "post_startup_script": instance["post_startup_script"],
-                        "fmbench_llm_tokenizer_fpath": instance[
-                            "fmbench_llm_tokenizer_fpath"
-                        ],
-                        "fmbench_llm_config_fpath": instance[
-                            "fmbench_llm_config_fpath"
-                        ],
-                        "fmbench_tokenizer_remote_dir": instance[
-                            "fmbench_tokenizer_remote_dir"
-                        ],
-                        "fmbench_complete_timeout": instance[
-                            "fmbench_complete_timeout"
-                        ],
-                        "region": instance["region"],
-                        "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
-                    }
+
+                "fmbench_config": instance["fmbench_config"],
+
+                    "post_startup_script": instance["post_startup_script"],
+                    "fmbench_llm_tokenizer_fpath": instance.get(
+                        "fmbench_llm_tokenizer_fpath"
+                    ),
+                    "fmbench_llm_config_fpath": instance.get(
+                        "fmbench_llm_config_fpath"
+                    ),
+                    "fmbench_tokenizer_remote_dir": instance.get(
+                        "fmbench_tokenizer_remote_dir"
+                    ),
+                    "fmbench_complete_timeout": instance["fmbench_complete_timeout"],
+                    "region": instance["region"],
+                    "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
+                }
 
     logger.info("Going to Sleep for 60 seconds to make sure the instances are up")
     time.sleep(60)

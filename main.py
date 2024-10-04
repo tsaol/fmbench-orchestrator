@@ -159,9 +159,7 @@ if __name__ == "__main__":
 
     logger.info(f"Deploying Ec2 Instances")
     if config_data["run_steps"]["deploy_ec2_instance"]:
-        iam_arn = config_data["aws"].get(
-            get_iam_role(), create_iam_instance_profile_arn()
-        )
+        iam_arn = get_iam_role()
         logger.info(f"iam arn: {iam_arn}")
         # WIP Parallelize This.
         for instance in config_data["instances"]:

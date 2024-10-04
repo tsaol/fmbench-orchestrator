@@ -1,6 +1,4 @@
 aws:
-  # This is the IAM instance profile that is created
-  iam_instance_profile_arn: fmbench_orchestrator_role_new
   # This is the path to the hf token file that contains your custom
   # hf token
   hf_token_fpath: /tmp/hf_token.txt
@@ -34,7 +32,7 @@ key_pair_gen:
   #Need to change this name to something better?
   # This assumes that if key_pair_generation is false, you have the key pair stored in the root.
   # If so, change the file name to your KP name and the script will pick it up.
-  key_pair_name: fmbench_orchestrator_key
+  key_pair_name: fmbench_orchestrator_key_pair
 
 #Instance follows the format below.
 #   instance_id: {instance_id_here} if Instance_id, then you need to bring your own private key
@@ -73,9 +71,9 @@ key_pair_gen:
 # Take the below as list of dict as there might be 2 instances with the same AMI
 
 instances:
-- instance_type: g5.2xlarge
+- instance_type: g6e.2xlarge
   region: us-east-2
-  ami_id: ami-02640984b8ff18c56 # For us-east-1: ami-067bd563cecc90173
+  ami_id: ami-02640984b8ff18c56
   device_name: /dev/sda1
   ebs_del_on_termination: True
   ebs_Iops: 16000

@@ -74,7 +74,7 @@ def _get_security_group_id_by_name(region: str,
         else:
             logger.error(f"Security group '{group_name}' not found in VPC '{vpc_id}'.")
     except Exception as e:
-        print(f"Error retrieving security group: {e}")
+        logger.INFO(f"Error retrieving security group: {e}")
         security_group_id=None
     return security_group_id
 
@@ -420,7 +420,7 @@ def _check_for_results_folder(hostname: str,
             # Split the output by newline to get folder names
             fmbench_result_folders = output.split("\n") if output else None
     except Exception as e:
-        print(f"Error connecting via SSH to {hostname}: {e}")
+        logger.info(f"Error connecting via SSH to {hostname}: {e}")
         fmbench_result_folders=None
     return fmbench_result_folders
 
@@ -745,16 +745,6 @@ async def upload_config_and_tokenizer(
         hostname, username, key_file_path, local_paths, remote_path
     )
 
-async def upload_pricing(
-    hostname, username, key_file_path, pricing_path, remote_path
-):
-    # List of files to upload
-    local_paths = [pricing_path]
-    # Call the asynchronous file upload function
-    await upload_file_to_instance_async(
-        hostname, username, key_file_path, local_paths, remote_path
-    )
-
 # Asynchronous function to handle the configuration file
 async def handle_config_file_async(instance):
     """Handles downloading and uploading of the config file based on the config type (URL or local path)."""
@@ -774,7 +764,7 @@ async def handle_config_file_async(instance):
     remote_config_path = (
         f"/home/{instance['username']}/{os.path.basename(local_config_path)}"
     )
-    print(f"remote_config_path is: {remote_config_path}...")
+    logger.info(f"remote_config_path is: {remote_config_path}...")
 
     # Upload the configuration file to the EC2 instance
     await upload_file_to_instance_async(

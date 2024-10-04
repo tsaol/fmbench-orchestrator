@@ -12,7 +12,7 @@ import paramiko
 from utils import *
 from constants import *
 from scp import SCPClient
-from typing import Optional
+from typing import Optional, List
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from botocore.exceptions import NoCredentialsError, ClientError
@@ -27,12 +27,11 @@ from globals import (
 
 executor = ThreadPoolExecutor()
 
-
-instance_id_list = []
-fmbench_config_map = []
-fmbench_post_startup_script_map = []
-
-instance_data_map = {}
+# Initialize global variables for this file
+instance_id_list: List = []
+fmbench_config_map: List = []
+fmbench_post_startup_script_map: List = []
+instance_data_map: Dict = {}
 
 logging.basicConfig(
     level=logging.INFO,  # Set the log level to INFO
@@ -52,13 +51,12 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
     # Check for the startup completion flag
 
     startup_complete = await asyncio.get_event_loop().run_in_executor(
-        executor, wait_for_flag, instance, 600, 30, "/tmp/startup_complete.flag"
+        executor, wait_for_flag, instance, 600, 30, STARTUP_COMPLETE_FLAG_FPATH
     )
 
     if startup_complete:
         # Handle configuration file (download/upload) and get the remote path
         remote_config_path = await handle_config_file_async(instance)
-
         # Format the script with the remote config file path
         # Change this later to be a better implementation, right now it is bad.
         formatted_script = formatted_script.format(config_file=remote_config_path)
@@ -94,7 +92,7 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
             instance,
             instance["fmbench_complete_timeout"],
             30,
-            "/tmp/fmbench_completed.flag",
+            FMBENCH_TEST_COMPLETE_FLAG_FPATH,
         )
 
         if fmbench_complete:
@@ -122,7 +120,7 @@ async def multi_deploy_fmbench(instance_details, remote_script_path):
             bash_script = file.read()
 
         logger.info("Read Bash Script")
-        logger.info(f"{bash_script}")
+        logger.info(f"Post startup script is: {bash_script}")
 
         # Create an async task for this instance
         tasks.append(execute_fmbench(instance, bash_script, remote_script_path))
@@ -138,7 +136,7 @@ async def main():
 logger = logging.getLogger(name=__name__)
 
 if __name__ == "__main__":
-    config_data = load_yaml_file(yaml_file_path)
+    config_data = load_yaml_file(YAML_FILE_PATH)
     logger.info(f"Loaded Config {config_data}")
 
     hf_token_fpath = config_data["aws"].get("hf_token_fpath")
@@ -161,9 +159,11 @@ if __name__ == "__main__":
 
     logger.info(f"Deploying Ec2 Instances")
     if config_data["run_steps"]["deploy_ec2_instance"]:
+
         iam_arn = config_data["aws"].get(
             get_iam_role(), create_iam_instance_profile_arn()
         )
+
         logger.info(f"iam arn: {iam_arn}")
         # WIP Parallelize This.
         for instance in config_data["instances"]:
@@ -222,18 +222,19 @@ if __name__ == "__main__":
                     ami_id,
                     instance_type,
                     iam_arn,
+                    region,
                     device_name,
                     ebs_del_on_termination,
                     ebs_Iops,
                     ebs_VolumeSize,
                     ebs_VolumeType,
                     CapacityReservationPreference,
-                    CapacityReservationTarget,
-                    region,
-                )
+                    CapacityReservationTarget)
                 instance_id_list.append(instance_id)
                 instance_data_map[instance_id] = {
-                    "fmbench_config": instance["fmbench_config"],
+
+                "fmbench_config": instance["fmbench_config"],
+
                     "post_startup_script": instance["post_startup_script"],
                     "fmbench_llm_tokenizer_fpath": instance.get(
                         "fmbench_llm_tokenizer_fpath"

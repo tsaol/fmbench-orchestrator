@@ -1,83 +1,96 @@
 import os
-import boto3
 import json
-import requests
+import boto3
 import logging
+import requests
 from constants import *
+from typing import Tuple
 from utils import create_security_group, load_yaml_file
 from utils import authorize_inbound_rules, create_key_pair
 from botocore.exceptions import NoCredentialsError, ClientError
 
-logger = logging.getLogger(name=__name__)
+# set a logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-config_data = load_yaml_file(yaml_file_path)
+config_data = load_yaml_file(YAML_FILE_PATH)
 
-
-def get_region():
-    session = boto3.session.Session()
-    region_name = session.region_name
-    if region_name is None:
-        print(
-            f"boto3.session.Session().region_name is {region_name}, "
-            f"going to use an metadata api to determine region name"
-        )
-        # THIS CODE ASSUMED WE ARE RUNNING ON EC2, for everything else
-        # the boto3 session should be sufficient to retrieve region name
-        resp = requests.put(
-            "http://169.254.169.254/latest/api/token",
-            headers={"X-aws-ec2-metadata-token-ttl-seconds": "21600"},
-        )
-        token = resp.text
-        region_name = requests.get(
-            "http://169.254.169.254/latest/meta-data/placement/region",
-            headers={"X-aws-ec2-metadata-token": token},
-        ).text
-        print(f"region_name={region_name}, also setting the AWS_DEFAULT_REGION env var")
-        os.environ["AWS_DEFAULT_REGION"] = region_name
-    print(f"region_name={region_name}")
+def get_region() -> str:
+    try: 
+        session = boto3.session.Session()
+        region_name = session.region_name
+        if region_name is None:
+            logger.info(f"boto3.session.Session().region_name is {region_name}, "
+                    f"going to use an metadata api to determine region name")
+            # THIS CODE ASSUMED WE ARE RUNNING ON EC2, for everything else
+            # the boto3 session should be sufficient to retrieve region name
+            resp = requests.put(
+                "http://169.254.169.254/latest/api/token",
+                headers={"X-aws-ec2-metadata-token-ttl-seconds": "21600"},
+            )
+            token = resp.text
+            region_name = requests.get(
+                "http://169.254.169.254/latest/meta-data/placement/region",
+                headers={"X-aws-ec2-metadata-token": token},
+            ).text
+            logger.info(f"region_name={region_name}, also setting the AWS_DEFAULT_REGION env var")
+            os.environ["AWS_DEFAULT_REGION"] = region_name
+        logger.info(f"region_name={region_name}")
+    except Exception as e: 
+        logger.error(f"Could not fetch the region: {e}")
+        region_name=None
     return region_name
 
 
-def get_iam_role():
-
-    caller = boto3.client("sts").get_caller_identity()
-    account_id = caller.get("Account")
-    role_arn_from_env = os.environ.get("FMBENCH_ROLE_ARN")
-    if role_arn_from_env:
-        print(f"role_arn_from_env={role_arn_from_env}, using it to set arn_string")
-        arn_string = role_arn_from_env
-    else:
-        print(
-            f"role_arn_from_env={role_arn_from_env}, using current sts caller identity to set arn_string"
-        )
-        arn_string = caller.get("Arn")
-        # if this is an assumed role then remove the assumed role related pieces
-        # because we are also using this role for deploying the SageMaker endpoint
-        # arn:aws:sts::015469603702:assumed-role/SSMDefaultRoleForOneClickPvreReporting/i-0c5bba16a8b3dac51
-        # should be converted to arn:aws:iam::015469603702:role/SSMDefaultRoleForOneClickPvreReporting
-        if ":assumed-role/" in arn_string:
-            role_name = arn_string.split("/")[-2]
-            arn_string = f"arn:aws:iam::{account_id}:instance-profile/{role_name}"
-            print(
-                f"the sts role is an assumed role, setting arn_string to {arn_string}"
-            )
+def get_iam_role() -> str:
+    try:
+        caller = boto3.client("sts").get_caller_identity()
+        account_id = caller.get("Account")
+        role_arn_from_env = os.environ.get("FMBENCH_ROLE_ARN")
+        if role_arn_from_env:
+            print(f"role_arn_from_env={role_arn_from_env}, using it to set arn_string")
+            arn_string = role_arn_from_env
         else:
+            print(
+                f"role_arn_from_env={role_arn_from_env}, using current sts caller identity to set arn_string"
+            )
             arn_string = caller.get("Arn")
+
+            # if this is an assumed role then remove the assumed role related pieces
+            # because we are also using this role for deploying the SageMaker endpoint
+            # arn:aws:sts::015469603702:assumed-role/SSMDefaultRoleForOneClickPvreReporting/i-0c5bba16a8b3dac51
+            # should be converted to arn:aws:iam::015469603702:role/SSMDefaultRoleForOneClickPvreReporting
+            if ":assumed-role/" in arn_string:
+                role_name = arn_string.split("/")[-2]
+                arn_string = f"arn:aws:iam::{account_id}:instance-profile/{role_name}"
+                print(
+                    f"the sts role is an assumed role, setting arn_string to {arn_string}"
+                )
+            else:
+                arn_string = caller.get("Arn")
+        role_name = arn_string.split("/")[-1]
+    except Exception as e: 
+        logger.error(f"Could not fetch the role name or arn_string: {e}")
+        arn_string=None
 
     return arn_string
 
 
 def create_iam_instance_profile_arn():
 
-    iam_client = boto3.client("iam")
-    role_name: str = "fmbench"
+    iam_client = boto3.client('iam')
+    role_name: str = 'fmbench'
+
     instance_profile_arn: Optional[str] = None
     instance_profile_role_name: str = config_data["aws"].get(
         "iam_instance_profile_arn", "fmbench_orchestrator_role_new"
     )
-    try:
+
+    try: 
         policy = {
-            "Version": "2012-10-17",
+                "Version": "2012-10-17",
+
+
             "Statement": [
                 {
                     "Effect": "Allow",
@@ -150,7 +163,9 @@ def create_iam_instance_profile_arn():
         }
 
         policy_response = iam_client.create_policy(
-            PolicyName="CustomPolicy", PolicyDocument=json.dumps(policy)
+
+            PolicyName='CustomPolicy', PolicyDocument=json.dumps(policy)
+
         )
 
         # Create IAM role
@@ -212,7 +227,7 @@ def create_iam_instance_profile_arn():
             logger.error(f"Error creating the instance profile iam: {e}")
 
 
-def get_sg_id(region):
+def get_sg_id(region: str) -> str:
     # Append the region to the group name
     GROUP_NAME = f"{config_data['security_group'].get('group_name')}-{region}"
     DESCRIPTION = config_data["security_group"].get("description", " ")
@@ -220,7 +235,7 @@ def get_sg_id(region):
 
     try:
         # Create or get the security group with the region-specific name
-        sg_id = create_security_group(GROUP_NAME, DESCRIPTION, VPC_ID, region)
+        sg_id = create_security_group(region, GROUP_NAME, DESCRIPTION, VPC_ID)
         logger.info(f"Security group '{GROUP_NAME}' created or imported in {region}")
 
         if sg_id:
@@ -291,5 +306,4 @@ def get_key_pair(region):
             raise ValueError(f"Key pair file not found at {private_key_fname}")
         except IOError as e:
             raise ValueError(f"Error reading key pair file '{private_key_fname}': {e}")
-
     return private_key_fname, key_pair_name

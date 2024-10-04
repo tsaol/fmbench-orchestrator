@@ -1,9 +1,17 @@
 aws:
-  # This is the IAM instance profile that is created
-  # iam_instance_profile_arn: arn:aws:iam::471112568442:instance-profile/Multi-Deploy-EC2
+  # This is the path to the hf token file that contains your custom
+  # hf token
   hf_token_fpath: /tmp/hf_token.txt
   
-
+# steps to run the fmbench orchestration
+# test. If all steps are set to yes, the security
+# group will be greated, the keys will be generated at 
+# instance creation, EC2 instances will be created, 
+# the FMBench orchestration test will run and then at the 
+# end the infrastructure (in this case EC2 instances) will
+# be deleted.
+# All results are stored in the local results directory at the end of the
+# FMBench orchestration test.
 run_steps:
   security_group_creation: yes
   key_pair_generation: yes
@@ -14,14 +22,17 @@ run_steps:
 security_group:
   group_name: fmbench_orchestrator_sg
   description: MultiDeploy EC2 Security Group
-  #If VPC Is left empty, boto3 automatically gets the default vpc for your region
+  # If VPC Is left empty, boto3 automatically gets the default VPC for your region
+  # If your current region does not have an active default VPC set up, set it up manually
+  # following the steps here: https://docs.aws.amazon.com/vpc/latest/userguide/work-with-default-vpc.html#create-default-vpc
   vpc_id:
+
 
 key_pair_gen:
   #Need to change this name to something better?
   # This assumes that if key_pair_generation is false, you have the key pair stored in the root.
   # If so, change the file name to your KP name and the script will pick it up.
-  key_pair_name: fmbench_orchestrator
+  key_pair_name: fmbench_orchestrator_key_pair
 
 #Instance follows the format below.
 #   instance_id: {instance_id_here} if Instance_id, then you need to bring your own private key
@@ -60,9 +71,10 @@ key_pair_gen:
 # Take the below as list of dict as there might be 2 instances with the same AMI
 
 instances:
-- instance_type: g5.2xlarge
-  region: us-east-1
-  ami_id: ami-067bd563cecc90173
+
+- instance_type: g6e.2xlarge
+  region: us-east-2
+  ami_id: ami-02640984b8ff18c56
   device_name: /dev/sda1
   ebs_del_on_termination: True
   ebs_Iops: 16000
@@ -73,21 +85,4 @@ instances:
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 1200
   fmbench_config: configs/config-ec2-llama3-8b-g6e-2xl.yml
-
-# - instance_type: g5.2xlarge
-#   region: us-west-2
-#   ami_id: ami-0ef389de7488b38d4
-#   device_name: /dev/sda1
-#   ebs_del_on_termination: True
-#   ebs_Iops: 16000
-#   ebs_VolumeSize: 250
-#   ebs_VolumeType: gp3
-#   startup_script: startup_scripts/gpu_ubuntu_startup.txt
-#   post_startup_script: post_startup_scripts/fmbench.txt
-#   fmbench_llm_tokenizer_fpath: fmbench_llm_utils/tokenizer.json
-#   fmbench_llm_config_fpath: fmbench_llm_utils/config.json
-#   fmbench_tokenizer_remote_dir: /tmp/fmbench-read/llama3_tokenizer/
-#   # Timeout period in Seconds before a run is stopped
-#   fmbench_complete_timeout: 1200
-#   fmbench_config: https://raw.githubusercontent.com/dheerajoruganty/multi-deploy-ec2/refs/heads/main/configs/config-ec2-llama3-8b.yml
 

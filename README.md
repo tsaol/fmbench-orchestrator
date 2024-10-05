@@ -18,12 +18,29 @@ The **FMBench Orchestrator** is a tool designed to automate the deployment and m
 9. [License](#license)
 
 ## Prerequisites
-- **IAM ROLE**: You need an active AWS account having an **IAM Role** necessary permissions to create, manage, and terminate EC2 instances.
-- **EC2 Instance**: It is recommended to run the orchestrator on an EC2 instance, attaching the IAM Role with permissions, located in the same AWS region where you plan to launch the multiple EC2 instances.
 
+- **IAM ROLE**: You need an active AWS account having an **IAM Role** necessary permissions to create, manage, and terminate EC2 instances. See [this](docs/iam.md) link for the permissions and trust policies that this IAM role needs to have. Call this IAM role as `fmbench-orchestrator`.
+
+    
+- **EC2 Instance**: It is recommended to run the orchestrator on an EC2 instance, attaching the IAM Role with permissions, preferably located in the same AWS region where you plan to launch the multiple EC2 instances (although launching instances across regions is supported as well).
+
+    - Use `Ubuntu` as the instance OS, specifically the `ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20240927` AMI.
+    - Use `t3.xlarge` as the instance type with preferably at least 100GB of disk space.
+    - Associate the `fmbench-orchestrator` IAM role with this instance.
 
 ## Installation
-1. **Clone the Repository**:
+
+1. **Install `conda`**
+
+    ```{.bash}
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+    bash Miniconda3-latest-Linux-x86_64.sh -b  # Run the Miniconda installer in batch mode (no manual intervention)
+    rm -f Miniconda3-latest-Linux-x86_64.sh    # Remove the installer script after installation
+    eval "$(/home/$USER/miniconda3/bin/conda shell.bash hook)" # Initialize conda for bash shell
+    conda init  # Initialize conda, adding it to the shell
+    ```
+
+1. **Clone the Repository**
 
     ```bash
     git clone https://github.com/awslabs/fmbench-orchestrator.git
@@ -31,10 +48,11 @@ The **FMBench Orchestrator** is a tool designed to automate the deployment and m
     ```
 
 ## Conda Environment Setup
+
 1. **Create a Conda Environment with Python 3.11**:
 
     ```bash
-    conda create --name fmbench-orchestrator-py311 python=3.11
+    conda create --name fmbench-orchestrator-py311 python=3.11 -y
     ```
 
 2. **Activate the Environment**:
@@ -50,8 +68,10 @@ The **FMBench Orchestrator** is a tool designed to automate the deployment and m
     ```
 
 ## Running FMBench Orchestrator:
+
+You can either use an existing config file included in this repo, such as `
 ```bash
-python main.py
+python main.py -f configs/config.yml
 ```
 
 # FMBENCH Orchestrator Configuration Guide

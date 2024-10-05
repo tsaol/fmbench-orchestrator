@@ -21,11 +21,19 @@ MIN_INSTANCE_COUNT: int = 1
 MAX_INSTANCE_COUNT: int = 1
 
 # FMBench results file path
-FMBENCH_RESULTS_FOLDER_PATTERN: str = "/home/ubuntu/foundation-model-benchmarking-tool/results-*"
+FMBENCH_RESULTS_FOLDER_PATTERN: str = "$HOME/results-*"
 
 # flag related variables
 STARTUP_COMPLETE_FLAG_FPATH: str = "/tmp/startup_complete.flag"
 FMBENCH_TEST_COMPLETE_FLAG_FPATH: str = "/tmp/fmbench_completed.flag"
+MAX_WAIT_TIME_FOR_STARTUP_SCRIPT_IN_SECONDS: int = 1200
+SCRIPT_CHECK_INTERVAL_IN_SECONDS: int = 60
+FMBENCH_LOG_PATH: str = "~/fmbench.log"
+CLOUD_INITLOG_PATH: str = "/var/log/cloud-init-output.log"
+
+# misc directory paths
+RESULTS_DIR: str = "results"
+DOWNLOAD_DIR_FOR_CFG_FILES: str = "downloaded_configs"
 
 AMI_NAME_MAP = {
     "gpu": "Deep Learning OSS Nvidia Driver AMI GPU PyTorch 2.4 (Ubuntu 22.04)",

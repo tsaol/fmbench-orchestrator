@@ -1,0 +1,56 @@
+# Download and install Miniconda
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /home/ubuntu/Miniconda3-latest-Linux-x86_64.sh
+bash /home/ubuntu/Miniconda3-latest-Linux-x86_64.sh -b -p /home/ubuntu/miniconda3
+rm /home/ubuntu/Miniconda3-latest-Linux-x86_64.sh
+
+# Initialize conda for bash shell
+/home/ubuntu/miniconda3/bin/conda init
+
+# Clone the GitHub repository
+git clone https://github.com/aws-samples/foundation-model-benchmarking-tool.git /home/ubuntu/foundation-model-benchmarking-tool
+cd /home/ubuntu/foundation-model-benchmarking-tool
+
+# Create a new conda environment
+/home/ubuntu/miniconda3/bin/conda create --name fmbench_python311 -y python=3.11 ipykernel
+# Activate the environment and install fmbench
+source /home/ubuntu/miniconda3/bin/activate fmbench_python311
+pip install -U fmbench
+
+
+# Download content from S3 using the provided script
+curl -s https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/main/copy_s3_content.sh | sh -s -- /tmp
+
+# Add the conda environment activation and directory navigation to .bashrc
+echo 'source /home/ubuntu/miniconda3/bin/activate fmbench_python311' >> /home/ubuntu/.bashrc
+echo 'cd /home/ubuntu/foundation-model-benchmarking-tool' >> /home/ubuntu/.bashrc
+
+source /home/ubuntu/.bashrc
+
+cd /home/ubuntu/foundation-model-benchmarking-tool;
+source activate fmbench_python311;
+pip install -U fmbench
+. ~/.bashrc;
+if [[ "$CONDA_DEFAULT_ENV" == "fmbench_python311" ]]; then
+    echo "The current environment is fmbench_python311. Running FMBench..."
+    
+    # Run fmbench and redirect output to a log file
+    nohup fmbench --config-file {config_file} --local-mode yes --write-bucket placeholder --tmp-dir /tmp > fmbench.log 2>&1 &
+    FM_BENCH_PID=$!
+    echo "FMBench is running with PID $FM_BENCH_PID. Logs are being written to fmbench.log."
+    
+    # Wait for the fmbench process to complete
+    wait $FM_BENCH_PID
+    echo "FMBench execution completed."
+
+    # Check if any directory matching results-* exists
+    if ls results-* 1> /dev/null 2>&1; then
+        echo "Results directory found. Creating flag file in /tmp."
+        # Create a flag file in /tmp
+        touch /tmp/fmbench_completed.flag
+    else
+        echo "Results directory not found. No flag file created."
+    fi
+else
+    echo "Error: The current environment is not fmbench_python311. Exiting."
+    exit 1
+fi

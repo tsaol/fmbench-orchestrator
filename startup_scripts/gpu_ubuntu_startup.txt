@@ -1,3 +1,22 @@
+Content-Type: multipart/mixed; boundary="//"
+MIME-Version: 1.0
+
+--//
+Content-Type: text/cloud-config; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="cloud-config.txt"
+
+#cloud-config
+cloud_final_modules:
+- [scripts-user, always]
+
+--//
+Content-Type: text/x-shellscript; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="userdata.txt"
+
 #!/bin/bash
 cd /home/ubuntu/
 
@@ -17,10 +36,6 @@ rm /home/ubuntu/Miniconda3-latest-Linux-x86_64.sh
 # Initialize conda for bash shell
 /home/ubuntu/miniconda3/bin/conda init
 
-# Clone the GitHub repository
-git clone https://github.com/aws-samples/foundation-model-benchmarking-tool.git /home/ubuntu/foundation-model-benchmarking-tool
-cd /home/ubuntu/foundation-model-benchmarking-tool
-
 # Create a new conda environment
 /home/ubuntu/miniconda3/bin/conda create --name fmbench_python311 -y python=3.11 ipykernel
 # Activate the environment and install fmbench
@@ -36,9 +51,18 @@ echo "__HF_TOKEN__" > /tmp/fmbench-read/scripts/hf_token.txt
 
 # Add the conda environment activation and directory navigation to .bashrc
 echo 'source /home/ubuntu/miniconda3/bin/activate fmbench_python311' >> /home/ubuntu/.bashrc
-echo 'cd /home/ubuntu/foundation-model-benchmarking-tool' >> /home/ubuntu/.bashrc
+
+# install triton inference server
+cd ~
+git clone https://github.com/triton-inference-server/tensorrtllm_backend.git  --branch v0.12.0
+# Update the submodules
+cd tensorrtllm_backend
+# Install git-lfs if needed
+sudo apt --fix-broken install
+sudo apt-get update && sudo apt-get install git-lfs -y --no-install-recommends
+git lfs install
+git submodule update --init --recursive
 
 source /home/ubuntu/.bashrc
 touch /tmp/startup_complete.flag
 EOF
-

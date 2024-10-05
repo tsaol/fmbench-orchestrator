@@ -6,6 +6,7 @@ import yaml
 import boto3
 import base64
 import urllib
+import shutil
 import logging
 import asyncio
 import requests
@@ -19,7 +20,6 @@ from concurrent.futures import ThreadPoolExecutor
 from botocore.exceptions import NoCredentialsError, ClientError
 
 # set a logger
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 executor = ThreadPoolExecutor()
@@ -198,7 +198,8 @@ def create_key_pair(key_name: str,
     return key_material
 
 
-def create_ec2_instance(key_name: str,
+def create_ec2_instance(idx: int,
+                        key_name: str,
                         security_group_id: str,
                         user_data_script: str,
                         ami: str,
@@ -227,6 +228,7 @@ def create_ec2_instance(key_name: str,
     ec2_resource = boto3.resource("ec2", region_name=region)
     try:
         instance_id: Optional[str] = None
+        instance_name: str = f"FMBench-{instance_type}-{idx}"
         # Create a new EC2 instance with user data
         instances = ec2_resource.create_instances(
             BlockDeviceMappings=[
@@ -261,14 +263,14 @@ def create_ec2_instance(key_name: str,
             TagSpecifications=[
                 {
                     "ResourceType": "instance",
-                    "Tags": [{"Key": "Name", "Value": "FMbench-Orchestrator-EC2"}],
+                    "Tags": [{"Key": "Name", "Value": instance_name}],
                 }
             ],
         )
         if instances is not None:
             # Get the instance ID of the created instance
             instance_id = instances[0].id
-            logger.info(f"EC2 Instance '{instance_id}' created successfully with user data.")
+            logger.info(f"EC2 Instance '{instance_id}', '{instance_name}' created successfully with user data.")
             instance_id=instance_id
         else:
             logger.error(f"Instances could not be created")
@@ -342,8 +344,8 @@ def _determine_username(ami_id: str, region: str):
 
 
 def _get_ec2_hostname_and_username(instance_id: str, 
-                                    region: str, 
-                                    public_dns=True) -> Tuple:
+                                   region: str, 
+                                   public_dns=True) -> Tuple:
     """
     Retrieve the public or private DNS name (hostname) and username of an EC2 instance.
     Args:
@@ -367,11 +369,15 @@ def _get_ec2_hostname_and_username(instance_id: str,
                 hostname = instance.get("PublicDnsName")
             else:
                  hostname = instance.get("PrivateDnsName")
+            # instance name
+            tags = response["Reservations"][0]["Instances"][0]["Tags"]
+            logger.info(f"tags={tags}")
+            instance_name = [t['Value'] for t in tags if t['Key'] == 'Name'][0]  
         # Determine the username based on the AMI ID
         username = _determine_username(ami_id, region)
     except Exception as e:
         logger.info(f"Error fetching instance details (hostname and username): {e}")
-    return hostname, username
+    return hostname, username, instance_name
 
 
 # Function to check for 'results-*' folders in the root directory of an EC2 instance
@@ -427,10 +433,10 @@ def _check_for_results_folder(hostname: str,
 
 # Function to retrieve folders from the EC2 instance
 def _get_folder_from_instance(hostname: str , 
-                                username: str, 
-                                key_file_path: str, 
-                                remote_folder: str, 
-                                local_folder: str) -> bool:
+                              username: str, 
+                              key_file_path: str, 
+                              remote_folder: str, 
+                              local_folder: str) -> bool:
     """
     Retrieves a folder from the EC2 instance to the local machine using SCP.
 
@@ -471,7 +477,7 @@ def _get_folder_from_instance(hostname: str ,
 
 # Main function to check and retrieve 'results-*' folders from multiple instances
 def check_and_retrieve_results_folder(instance: Dict, 
-                                    local_folder_base: str):
+                                      local_folder_base: str):
     """
     Checks for 'results-*' folders on a single EC2 instance and retrieves them if found.
 
@@ -485,6 +491,7 @@ def check_and_retrieve_results_folder(instance: Dict,
     """
     try: 
         hostname = instance["hostname"]
+        instance_name = instance["instance_name"]
         username = instance["username"]
         key_file_path = instance["key_file_path"]
         instance_id = instance["instance_id"]
@@ -497,13 +504,13 @@ def check_and_retrieve_results_folder(instance: Dict,
             if folder:  # Check if folder name is not empty
                 # Create a local folder path for this instance
                 local_folder = os.path.join(
-                    local_folder_base, instance_id, os.path.basename(folder)
+                    local_folder_base, instance_name
                 )
-                os.makedirs(
-                    local_folder, exist_ok=True
-                )  # Create local directory if it doesn't exist
+                
+                shutils.rmtree(local_folder)
+                os.makedirs(local_folder)  # Create local directory
                 logger.info(
-                    f"Retrieving folder '{folder}' from {hostname} to '{local_folder}'..."
+                    f"Retrieving folder '{folder}' from {instance_name} to '{local_folder}'..."
                 )
                 _get_folder_from_instance(
                     hostname, username, key_file_path, folder, local_folder
@@ -566,7 +573,7 @@ def generate_instance_details(instance_id_list, instance_data_map):
         PRIVATE_KEY_FNAME = config_entry["PRIVATE_KEY_FNAME"]
 
         # Get the public hostname and username for each instance
-        public_hostname, username = _get_ec2_hostname_and_username(
+        public_hostname, username, instance_name = _get_ec2_hostname_and_username(
             instance_id, region, public_dns=True
         )
 
@@ -575,6 +582,7 @@ def generate_instance_details(instance_id_list, instance_data_map):
             instance_details.append(
                 {
                     "instance_id": instance_id,
+                    "instance_name": instance_name,
                     "hostname": public_hostname,
                     "username": username,
                     "key_file_path": (
@@ -588,7 +596,7 @@ def generate_instance_details(instance_id_list, instance_data_map):
                     "fmbench_llm_config_fpath": fmbench_llm_config_fpath,
                     "fmbench_tokenizer_remote_dir": fmbench_tokenizer_remote_dir,
                     "fmbench_complete_timeout": fmbench_complete_timeout,
-                    "region": config_entry.get("region", "us-east-1"),
+                    "region": config_entry.get("region", "us-east-1")
                 }
             )
         else:
@@ -613,8 +621,8 @@ def run_command_on_instances(instance_details: List, key_file_path: str, command
     results: Dict = {}
 
     for instance in instance_details:
-        hostname, username = instance["hostname"], instance["username"]
-        logger.info(f"Running command on {hostname} as {username}...")
+        hostname, username, instance_name = instance["hostname"], instance["username"], instance["instance_name"]
+        logger.info(f"Running command on {instance_name}, {hostname} as {username}...")
         try:
             with paramiko.SSHClient() as ssh_client:
                 ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -674,7 +682,7 @@ def upload_and_execute_script_invoke_shell(hostname: str,
                 shell.send(f"chmod +x {remote_script_path}\n")
                 time.sleep(1)  # Wait for the command to complete
 
-                shell.send(f"nohup bash {remote_script_path} > /home/ubuntu/run_fmbench_nohup.log 2>&1 & disown\n")
+                shell.send(f"nohup bash {remote_script_path} > $HOME/run_fmbench_nohup.log 2>&1 & disown\n")
                 time.sleep(1)  # Wait for the command to complete
 
                 while shell.recv_ready():
@@ -690,10 +698,13 @@ def upload_and_execute_script_invoke_shell(hostname: str,
 
 
 # Asynchronous function to download a configuration file if it is a URL
-async def download_config_async(url, download_dir="downloaded_configs"):
+async def download_config_async(url, download_dir=DOWNLOAD_DIR_FOR_CFG_FILES):
     """Asynchronously downloads the configuration file from a URL."""
     os.makedirs(download_dir, exist_ok=True)
     local_path = os.path.join(download_dir, os.path.basename(url))
+    if os.path.exists(local_path):
+        logger.info(f"{local_path} already existed, deleting it first before downloading again")
+        os.remove(local_path)
     # Run the blocking download operation in a separate thread
     await asyncio.get_event_loop().run_in_executor(
         executor, wget.download, url, local_path
@@ -834,7 +845,12 @@ def _check_completion_flag(hostname, username, key_file_path, flag_file_path=STA
         return False
 
 
-def wait_for_flag(instance, max_wait_time=600, check_interval=30, flag_file_path=STARTUP_COMPLETE_FLAG_FPATH):
+def wait_for_flag(instance,
+                  flag_file_path,
+                  log_file_path,
+                  max_wait_time=MAX_WAIT_TIME_FOR_STARTUP_SCRIPT_IN_SECONDS,
+                  check_interval=SCRIPT_CHECK_INTERVAL_IN_SECONDS,
+                  ) -> bool:
     """
     Waits for the startup flag file on the EC2 instance, and returns the script if the flag file is found.
 
@@ -846,13 +862,24 @@ def wait_for_flag(instance, max_wait_time=600, check_interval=30, flag_file_path
         check_interval (int): Interval time in seconds between checks (default: 30 seconds).
     """
     end_time = time.time() + max_wait_time
+    startup_complete: bool = False
+    logger.info(f"going to wait {max_wait_time}s for the startup script for {instance['instance_name']} to complete")
+    logger.info("-----------------------------------------------------------------------------------------------")
+    logger.info(f"you can open another terminal and see the startup logs from this machine using the following command")
+    logger.info(f"ssh -i {instance['key_file_path']} {instance['username']}@{instance['hostname']} \'tail -f {log_file_path}\'")
+    logger.info("-----------------------------------------------------------------------------------------------")
     while time.time() < end_time:
-        if _check_completion_flag(
+        completed = _check_completion_flag(
             hostname=instance["hostname"],
             username=instance["username"],
             key_file_path=instance["key_file_path"],
-            flag_file_path=flag_file_path):
-            return True
-        logger.info(f"{flag_file_path} flag file not found. Checking again in {check_interval} seconds...")
-        time.sleep(check_interval)
-    return False
+            flag_file_path=flag_file_path)
+        if completed is True:
+            logger.info(f"{flag_file_path} flag file found!!")
+            break
+        else:
+            time_remaining = end_time - time.time()
+            logger.warning(f"Waiting for {flag_file_path}, instance_name={instance['instance_name']}..., seconds until timeout={int(time_remaining)}s")
+            time.sleep(check_interval)
+    logger.error(f"max_wait_time={max_wait_time} expired and the script for {instance['hostname']} has still not completed, exiting, ")
+    return completed

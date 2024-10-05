@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import json
 import wget
@@ -8,9 +9,12 @@ import base64
 import urllib
 import logging
 import asyncio
+import globals
+import argparse
 import paramiko
 from utils import *
 from constants import *
+from pathlib import Path
 from scp import SCPClient
 from typing import Optional, List
 from collections import defaultdict
@@ -21,9 +25,8 @@ from globals import (
     get_region,
     get_iam_role,
     get_sg_id,
-    get_key_pair,
+    get_key_pair
 )
-
 
 executor = ThreadPoolExecutor()
 
@@ -36,7 +39,7 @@ instance_data_map: Dict = {}
 logging.basicConfig(
     level=logging.INFO,  # Set the log level to INFO
     # Define log message format
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    format="[%(asctime)s] p%(process)s {%(filename)s:%(lineno)d} %(levelname)s - %(message)s",
     handlers=[
         logging.FileHandler("fmbench-Orchestrator.log"),  # Log to a file
         logging.StreamHandler(),  # Also log to console
@@ -49,10 +52,11 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
     Asynchronous wrapper for deploying an instance using synchronous functions.
     """
     # Check for the startup completion flag
-
-    startup_complete = await asyncio.get_event_loop().run_in_executor(
-        executor, wait_for_flag, instance, 600, 30, STARTUP_COMPLETE_FLAG_FPATH
-    )
+    startup_complete = await asyncio.get_event_loop().run_in_executor(executor,
+                                                                      wait_for_flag,
+                                                                      instance,
+                                                                      STARTUP_COMPLETE_FLAG_FPATH,
+                                                                      CLOUD_INITLOG_PATH)
 
     if startup_complete:
         # Handle configuration file (download/upload) and get the remote path
@@ -90,17 +94,19 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
             executor,
             wait_for_flag,
             instance,
-            instance["fmbench_complete_timeout"],
-            30,
             FMBENCH_TEST_COMPLETE_FLAG_FPATH,
+            FMBENCH_LOG_PATH,
+            instance["fmbench_complete_timeout"],
+            SCRIPT_CHECK_INTERVAL_IN_SECONDS
         )
 
         if fmbench_complete:
-            print("Fmbench Run successful, Getting the folders now")
+            logger.info("Fmbench Run successful, Getting the folders now")
+            results_folder = os.path.join(globals.config_data['general']['name'], RESULTS_DIR)
             await asyncio.get_event_loop().run_in_executor(
-                executor, check_and_retrieve_results_folder, instance, "output"
+                executor, check_and_retrieve_results_folder, instance, results_folder
             )
-            if config_data["run_steps"]["delete_ec2_instance"]:
+            if globals.config_data["run_steps"]["delete_ec2_instance"]:
                 delete_ec2_instance(instance["instance_id"], instance["region"])
                 instance_id_list.remove(instance["instance_id"])
 
@@ -133,34 +139,37 @@ async def main():
     await multi_deploy_fmbench(instance_details, remote_script_path)
 
 
-logger = logging.getLogger(name=__name__)
-
 if __name__ == "__main__":
-    config_data = load_yaml_file(YAML_FILE_PATH)
-    logger.info(f"Loaded Config {config_data}")
+    parser = argparse.ArgumentParser(description='Run FMBench orchestrator with a specified config file.')
+    parser.add_argument('--config-file', type=str, help='Path to your Config File', required=False, default="configs/config.yml")
 
-    hf_token_fpath = config_data["aws"].get("hf_token_fpath")
+    args = parser.parse_args()
+    logger.info(f"main, {args} = args")
+
+    globals.config_data = load_yaml_file(args.config_file)
+    logger.info(f"Loaded Config {globals.config_data}")
+
+    hf_token_fpath = globals.config_data["aws"].get("hf_token_fpath")
     hf_token: Optional[str] = None
     logger.info(f"Got Hugging Face Token file path from config. {hf_token_fpath}")
     logger.info("Attempting to open it")
 
-    with open(hf_token_fpath) as file:
-        hf_token = file.read()
-    if hf_token is None:
-        logger.error(f"No HF token found in {hf_token_fpath}")
+    if Path(hf_token_fpath).is_file():
+        hf_token = Path(hf_token_fpath).read_text().strip()
     else:
-        logger.info(f"HF token found and loaded from {hf_token_fpath}")
+        logger.error(f"{hf_token_fpath} does not exist, cannot continue")
+        sys.exit(1)
 
     logger.info(f"read hugging face token {hf_token} from file path")
     assert len(hf_token) > 4, "Hf_token is too small or invalid, please check"
 
-    for i in config_data["instances"]:
+    for i in globals.config_data["instances"]:
         logger.info(f"Instance list is as follows: {i}")
 
     logger.info(f"Deploying Ec2 Instances")
-    if config_data["run_steps"]["deploy_ec2_instance"]:
+    if globals.config_data["run_steps"]["deploy_ec2_instance"]:
 
-        if config_data["run_steps"]['create_iam_role']:
+        if globals.config_data["run_steps"]['create_iam_role']:
             try:
                 iam_arn = create_iam_instance_profile_arn()
             except Exception as e:
@@ -180,12 +189,15 @@ if __name__ == "__main__":
                                         attched to your instance.""")
         
         logger.info(f"iam arn: {iam_arn}")
-        # WIP Parallelize This.
-        for instance in config_data["instances"]:
+        # WIP Parallelize This.        
+        num_instances: int = len(globals.config_data["instances"])
+        for idx, instance in enumerate(globals.config_data["instances"]):
+            idx += 1
+            logger.info(f"going to create instance {idx} of {num_instances}")
             region = instance["region"]
             startup_script = instance["startup_script"]
             logger.info(f"Region Set for instance is: {region}")
-            if config_data["run_steps"]["security_group_creation"]:
+            if globals.config_data["run_steps"]["security_group_creation"]:
                 logger.info(
                     f"Creating Security Groups. getting them by name if they exist"
                 )
@@ -231,6 +243,7 @@ if __name__ == "__main__":
                 # user_data_script += command_to_run
                 # Create an EC2 instance with the user data script
                 instance_id = create_ec2_instance(
+                    idx,
                     PRIVATE_KEY_NAME,
                     sg_id,
                     user_data_script,
@@ -292,12 +305,14 @@ if __name__ == "__main__":
                     "region": instance["region"],
                     "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
                 }
+                logger.info(f"done creating instance {idx} of {num_instances}")
 
-    logger.info("Going to Sleep for 60 seconds to make sure the instances are up")
-    time.sleep(60)
+    sleep_time = 60
+    logger.info(f"Going to Sleep for {sleep_time} seconds to make sure the instances are up")
+    time.sleep(sleep_time)
 
-    if config_data["run_steps"]["run_bash_script"]:
+    if globals.config_data["run_steps"]["run_bash_script"]:
         instance_details = generate_instance_details(
             instance_id_list, instance_data_map
-        )  # Call the async function
+        )  # Call the async function           
         asyncio.run(main())

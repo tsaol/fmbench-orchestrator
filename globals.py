@@ -10,10 +10,9 @@ from utils import authorize_inbound_rules, create_key_pair
 from botocore.exceptions import NoCredentialsError, ClientError
 
 # set a logger
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-config_data = load_yaml_file(YAML_FILE_PATH)
+config_data = {}
 
 def get_region() -> str:
     try: 

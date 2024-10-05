@@ -382,8 +382,9 @@ def _get_ec2_hostname_and_username(instance_id: str,
 
 # Function to check for 'results-*' folders in the root directory of an EC2 instance
 def _check_for_results_folder(hostname: str,
-                                username: str,
-                                key_file_path: str) -> List:
+                              instance_name: str,
+                              username: str,
+                              key_file_path: str) -> List:
     """
     Checks if any folder matching the pattern exists in the root directory.
 
@@ -408,26 +409,27 @@ def _check_for_results_folder(hostname: str,
 
         # Connect to the instance
         ssh_client.connect(hostname, username=username, pkey=private_key)
-        logger.info(f"Connected to {hostname} as {username}")
+        logger.info(f"_check_for_results_folder, instance_name={instance_name}, connected to {hostname} as {username}")
 
         # Execute the command to check for folders matching the pattern
         command = f"ls -d {FMBENCH_RESULTS_FOLDER_PATTERN}"
         stdin, stdout, stderr = ssh_client.exec_command(command)
         output = stdout.read().decode().strip()
         error = stderr.read().decode().strip()
-
+        logger.info(f"_check_for_results_folder, instance_name={instance_name}, output={output}, error={error}")
         # Close the connection
         ssh_client.close()
         if error:
             # No folder found or other errors
-            logger.info(f"No matching folders found on {hostname}: {error}")
-            fmbench_result_folders=None
+            logger.info(f"_check_for_results_folder, instance_name={instance_name}, No matching folders found on {hostname}: {error}")
+            fmbench_result_folders = None
         else:
             # Split the output by newline to get folder names
             fmbench_result_folders = output.split("\n") if output else None
+            logger.info(f"_check_for_results_folder, instance_name={instance_name}, fmbench_result_folders={fmbench_result_folders}")
     except Exception as e:
         logger.info(f"Error connecting via SSH to {hostname}: {e}")
-        fmbench_result_folders=None
+        fmbench_result_folders = None
     return fmbench_result_folders
 
 
@@ -495,10 +497,10 @@ def check_and_retrieve_results_folder(instance: Dict,
         username = instance["username"]
         key_file_path = instance["key_file_path"]
         instance_id = instance["instance_id"]
-
+        logger.info(f"check_and_retrieve_results_folder, {instance['instance_name']}")
         # Check for 'results-*' folders in the specified directory
-        results_folders = _check_for_results_folder(hostname, username, key_file_path)
-
+        results_folders = _check_for_results_folder(hostname, instance_name, username, key_file_path)
+        logger.info(f"check_and_retrieve_results_folder, {instance_name}, result folders {results_folders}")
         # If any folders are found, retrieve them
         for folder in results_folders:
             if folder:  # Check if folder name is not empty
@@ -506,8 +508,8 @@ def check_and_retrieve_results_folder(instance: Dict,
                 local_folder = os.path.join(
                     local_folder_base, instance_name
                 )
-                
-                shutils.rmtree(local_folder)
+                logger.info(f"check_and_retrieve_results_folder, {instance_name}, going to download {folder} in {local_folder}")
+                #shutil.rmtree(local_folder)
                 os.makedirs(local_folder)  # Create local directory
                 logger.info(
                     f"Retrieving folder '{folder}' from {instance_name} to '{local_folder}'..."
@@ -515,6 +517,8 @@ def check_and_retrieve_results_folder(instance: Dict,
                 _get_folder_from_instance(
                     hostname, username, key_file_path, folder, local_folder
                 )
+                logger.info(f"check_and_retrieve_results_folder, {instance_name}, folder={folder} downloaded")
+        
     except Exception as e:
         logger.error(f"Error occured while attempting to check and retrieve results from the instances: {e}")
 
@@ -819,14 +823,12 @@ def _check_completion_flag(hostname, username, key_file_path, flag_file_path=STA
         ssh_client = paramiko.SSHClient()
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-        logger.info(f"{key_file_path}")
         # Load the private key
         private_key = paramiko.RSAKey.from_private_key_file(key_file_path)
 
         # Connect to the instance
         ssh_client.connect(hostname, username=username, pkey=private_key)
-        logger.info(f"Connected to {hostname} as {username}")
-
+        
         # Check if the flag file exists
         stdin, stdout, stderr = ssh_client.exec_command(
             f"test -f {flag_file_path} && echo 'File exists'"

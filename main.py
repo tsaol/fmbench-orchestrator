@@ -41,7 +41,7 @@ logging.basicConfig(
     # Define log message format
     format="[%(asctime)s] p%(process)s {%(filename)s:%(lineno)d} %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler("fmbench-Orchestrator.log"),  # Log to a file
+        logging.FileHandler("fmbench-orchestrator.log"),  # Log to a file
         logging.StreamHandler(),  # Also log to console
     ],
 )
@@ -102,7 +102,7 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
 
         if fmbench_complete:
             logger.info("Fmbench Run successful, Getting the folders now")
-            results_folder = os.path.join(globals.config_data['general']['name'], RESULTS_DIR)
+            results_folder = os.path.join(RESULTS_DIR, globals.config_data['general']['name'])
             await asyncio.get_event_loop().run_in_executor(
                 executor, check_and_retrieve_results_folder, instance, results_folder
             )
@@ -194,6 +194,10 @@ if __name__ == "__main__":
         for idx, instance in enumerate(globals.config_data["instances"]):
             idx += 1
             logger.info(f"going to create instance {idx} of {num_instances}")
+            deploy: bool = instance.get('deploy', True)
+            if deploy is False:
+                logger.warning(f"deploy={deploy} for instance={json.dumps(instance, indent=2)}, skipping it...")
+                continue
             region = instance["region"]
             startup_script = instance["startup_script"]
             logger.info(f"Region Set for instance is: {region}")
@@ -316,3 +320,4 @@ if __name__ == "__main__":
             instance_id_list, instance_data_map
         )  # Call the async function           
         asyncio.run(main())
+    logger.info("all done")

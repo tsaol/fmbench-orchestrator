@@ -25,7 +25,7 @@ from globals import (
     get_region,
     get_iam_role,
     get_sg_id,
-    get_key_pair
+    get_key_pair,
 )
 
 executor = ThreadPoolExecutor()
@@ -52,13 +52,22 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
     Asynchronous wrapper for deploying an instance using synchronous functions.
     """
     # Check for the startup completion flag
-    startup_complete = await asyncio.get_event_loop().run_in_executor(executor,
-                                                                      wait_for_flag,
-                                                                      instance,
-                                                                      STARTUP_COMPLETE_FLAG_FPATH,
-                                                                      CLOUD_INITLOG_PATH)
+    startup_complete = await asyncio.get_event_loop().run_in_executor(
+        executor,
+        wait_for_flag,
+        instance,
+        STARTUP_COMPLETE_FLAG_FPATH,
+        CLOUD_INITLOG_PATH,
+    )
 
     if startup_complete:
+        if instance['byo_dataset_fpath']:
+            await upload_byo_dataset(
+                instance["hostname"],
+                instance["username"],
+                instance["key_file_path"],
+                instance["byo_dataset_fpath"],
+            )
         # Handle configuration file (download/upload) and get the remote path
         remote_config_path = await handle_config_file_async(instance)
         # Format the script with the remote config file path
@@ -97,12 +106,14 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
             FMBENCH_TEST_COMPLETE_FLAG_FPATH,
             FMBENCH_LOG_PATH,
             instance["fmbench_complete_timeout"],
-            SCRIPT_CHECK_INTERVAL_IN_SECONDS
+            SCRIPT_CHECK_INTERVAL_IN_SECONDS,
         )
 
         if fmbench_complete:
             logger.info("Fmbench Run successful, Getting the folders now")
-            results_folder = os.path.join(RESULTS_DIR, globals.config_data['general']['name'])
+            results_folder = os.path.join(
+                RESULTS_DIR, globals.config_data["general"]["name"]
+            )
             await asyncio.get_event_loop().run_in_executor(
                 executor, check_and_retrieve_results_folder, instance, results_folder
             )
@@ -140,8 +151,16 @@ async def main():
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Run FMBench orchestrator with a specified config file.')
-    parser.add_argument('--config-file', type=str, help='Path to your Config File', required=False, default="configs/config.yml")
+    parser = argparse.ArgumentParser(
+        description="Run FMBench orchestrator with a specified config file."
+    )
+    parser.add_argument(
+        "--config-file",
+        type=str,
+        help="Path to your Config File",
+        required=False,
+        default="configs/config.yml",
+    )
 
     args = parser.parse_args()
     logger.info(f"main, {args} = args")
@@ -169,14 +188,14 @@ if __name__ == "__main__":
     logger.info(f"Deploying Ec2 Instances")
     if globals.config_data["run_steps"]["deploy_ec2_instance"]:
 
-        if globals.config_data["run_steps"]['create_iam_role']:
+        if globals.config_data["run_steps"]["create_iam_role"]:
             try:
                 iam_arn = create_iam_instance_profile_arn()
             except Exception as e:
                 logger.error(f"Cannot create IAM Role due to exception {e}")
                 logger.info("Going to get iam role from the current instance")
                 iam_arn = get_iam_role()
-        
+
         else:
             try:
                 iam_arn = get_iam_role()
@@ -184,19 +203,23 @@ if __name__ == "__main__":
                 logger.error(f"Cannot get IAM Role due to exception {e}")
 
         if not iam_arn:
-            raise NoCredentialsError("""Unable to locate credentials,
+            raise NoCredentialsError(
+                """Unable to locate credentials,
                                         Please check if an IAM role is 
-                                        attched to your instance.""")
-        
+                                        attched to your instance."""
+            )
+
         logger.info(f"iam arn: {iam_arn}")
-        # WIP Parallelize This.        
+        # WIP Parallelize This.
         num_instances: int = len(globals.config_data["instances"])
         for idx, instance in enumerate(globals.config_data["instances"]):
             idx += 1
             logger.info(f"going to create instance {idx} of {num_instances}")
-            deploy: bool = instance.get('deploy', True)
+            deploy: bool = instance.get("deploy", True)
             if deploy is False:
-                logger.warning(f"deploy={deploy} for instance={json.dumps(instance, indent=2)}, skipping it...")
+                logger.warning(
+                    f"deploy={deploy} for instance={json.dumps(instance, indent=2)}, skipping it..."
+                )
                 continue
             region = instance["region"]
             startup_script = instance["startup_script"]
@@ -261,12 +284,11 @@ if __name__ == "__main__":
                     ebs_VolumeSize,
                     ebs_VolumeType,
                     CapacityReservationPreference,
-                    CapacityReservationTarget)
+                    CapacityReservationTarget,
+                )
                 instance_id_list.append(instance_id)
                 instance_data_map[instance_id] = {
-
-                "fmbench_config": instance["fmbench_config"],
-
+                    "fmbench_config": instance["fmbench_config"],
                     "post_startup_script": instance["post_startup_script"],
                     "fmbench_llm_tokenizer_fpath": instance.get(
                         "fmbench_llm_tokenizer_fpath"
@@ -280,6 +302,7 @@ if __name__ == "__main__":
                     "fmbench_complete_timeout": instance["fmbench_complete_timeout"],
                     "region": instance["region"],
                     "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
+                   "byo_dataset_fpath": instance.get("byo_dataset_fpath")
                 }
             if instance.get("instance_id") is not None:
                 instance_id = instance["instance_id"]
@@ -292,32 +315,35 @@ if __name__ == "__main__":
                 if PRIVATE_KEY_FNAME:
                     instance_id_list.append(instance_id)
                     instance_data_map[instance_id] = {
-
-                "fmbench_config": instance["fmbench_config"],
-
-                    "post_startup_script": instance["post_startup_script"],
-                    "fmbench_llm_tokenizer_fpath": instance.get(
-                        "fmbench_llm_tokenizer_fpath"
-                    ),
-                    "fmbench_llm_config_fpath": instance.get(
-                        "fmbench_llm_config_fpath"
-                    ),
-                    "fmbench_tokenizer_remote_dir": instance.get(
-                        "fmbench_tokenizer_remote_dir"
-                    ),
-                    "fmbench_complete_timeout": instance["fmbench_complete_timeout"],
-                    "region": instance["region"],
-                    "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
-                }
+                        "fmbench_config": instance["fmbench_config"],
+                        "post_startup_script": instance["post_startup_script"],
+                        "fmbench_llm_tokenizer_fpath": instance.get(
+                            "fmbench_llm_tokenizer_fpath"
+                        ),
+                        "fmbench_llm_config_fpath": instance.get(
+                            "fmbench_llm_config_fpath"
+                        ),
+                        "fmbench_tokenizer_remote_dir": instance.get(
+                            "fmbench_tokenizer_remote_dir"
+                        ),
+                        "fmbench_complete_timeout": instance[
+                            "fmbench_complete_timeout"
+                        ],
+                        "region": instance["region"],
+                        "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
+                        "byo_dataset_fpath": instance.get("byo_dataset_fpath")
+                    }
                 logger.info(f"done creating instance {idx} of {num_instances}")
 
     sleep_time = 60
-    logger.info(f"Going to Sleep for {sleep_time} seconds to make sure the instances are up")
+    logger.info(
+        f"Going to Sleep for {sleep_time} seconds to make sure the instances are up"
+    )
     time.sleep(sleep_time)
 
     if globals.config_data["run_steps"]["run_bash_script"]:
         instance_details = generate_instance_details(
             instance_id_list, instance_data_map
-        )  # Call the async function           
+        )  # Call the async function
         asyncio.run(main())
     logger.info("all done")

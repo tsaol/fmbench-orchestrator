@@ -574,6 +574,7 @@ def generate_instance_details(instance_id_list, instance_data_map):
         fmbench_llm_tokenizer_fpath = config_entry.get("fmbench_llm_tokenizer_fpath")
         fmbench_llm_config_fpath = config_entry.get("fmbench_llm_config_fpath")
         fmbench_tokenizer_remote_dir = config_entry.get("fmbench_tokenizer_remote_dir")
+        byo_dataset_fpath =  config_entry.get("byo_dataset_fpath")
         fmbench_complete_timeout = config_entry["fmbench_complete_timeout"]
         region = config_entry["region"]
         PRIVATE_KEY_FNAME = config_entry["PRIVATE_KEY_FNAME"]
@@ -601,6 +602,7 @@ def generate_instance_details(instance_id_list, instance_data_map):
                     "fmbench_llm_tokenizer_fpath": fmbench_llm_tokenizer_fpath,
                     "fmbench_llm_config_fpath": fmbench_llm_config_fpath,
                     "fmbench_tokenizer_remote_dir": fmbench_tokenizer_remote_dir,
+                    "byo_dataset_fpath": byo_dataset_fpath,
                     "fmbench_complete_timeout": fmbench_complete_timeout,
                     "region": config_entry.get("region", "us-east-1")
                 }
@@ -763,15 +765,15 @@ async def upload_config_and_tokenizer(
     )
 
 
-async def upload_pricing(
-    hostname, username, key_file_path, pricing_path, remote_path
+async def upload_byo_dataset(
+    hostname, username, key_file_path, byo_dataset_path, byo_remote_path = BYO_DATASET_FILE_PATH
 ):
     # List of files to upload
-    local_paths = [pricing_path]
+    local_paths = [byo_dataset_path]
 
     # Call the asynchronous file upload function
     await upload_file_to_instance_async(
-        hostname, username, key_file_path, local_paths, remote_path
+        hostname, username, key_file_path, local_paths, byo_remote_path
     )
 
 # Asynchronous function to handle the configuration file

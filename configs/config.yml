@@ -103,3 +103,4 @@ instances:
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
   fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3/8b/config-llama3-8b-g6e.4xl-tp-1-mc-max-triton-ec2.yml
+  byo_dataset_fpath: byo_dataset/custom.jsonl

@@ -13,6 +13,7 @@ import requests
 import paramiko
 from utils import *
 from constants import *
+from pathlib import Path
 from scp import SCPClient
 from collections import defaultdict
 from typing import Optional, List, Tuple
@@ -509,7 +510,8 @@ def check_and_retrieve_results_folder(instance: Dict,
                     local_folder_base, instance_name
                 )
                 logger.info(f"check_and_retrieve_results_folder, {instance_name}, going to download {folder} in {local_folder}")
-                shutil.rmtree(local_folder)
+                if Path(local_folder).is_dir():
+                    shutil.rmtree(local_folder)
                 os.makedirs(local_folder)  # Create local directory
                 logger.info(
                     f"Retrieving folder '{folder}' from {instance_name} to '{local_folder}'..."

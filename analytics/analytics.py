@@ -177,6 +177,9 @@ def main():
     args = parser.parse_args()
     print(f"main, {args} = args")
 
+    ANALYTICS_RESULTS_DIR: str = os.path.join("analytics", args.results_dir)
+    os.makedirs(ANALYTICS_RESULTS_DIR, exist_ok=True)
+
     # load pricing info
     pricing =  yaml.safe_load(Path(PRICING_FILE_PATH).read_text())
     logger.info(f"pricing={json.dumps(pricing, indent=2)}")

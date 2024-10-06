@@ -509,7 +509,7 @@ def check_and_retrieve_results_folder(instance: Dict,
                     local_folder_base, instance_name
                 )
                 logger.info(f"check_and_retrieve_results_folder, {instance_name}, going to download {folder} in {local_folder}")
-                #shutil.rmtree(local_folder)
+                shutil.rmtree(local_folder)
                 os.makedirs(local_folder)  # Create local directory
                 logger.info(
                     f"Retrieving folder '{folder}' from {instance_name} to '{local_folder}'..."

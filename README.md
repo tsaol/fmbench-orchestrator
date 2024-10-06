@@ -22,6 +22,8 @@ The **FMBench Orchestrator** is a tool designed to automate the deployment and m
 - **IAM ROLE**: You need an active AWS account having an **IAM Role** necessary permissions to create, manage, and terminate EC2 instances. See [this](docs/iam.md) link for the permissions and trust policies that this IAM role needs to have. Call this IAM role as `fmbench-orchestrator`.
 
     
+- **Service quota**: Your AWS account needs to have appropriately set service quota limits to be able to start the Amazon EC2 instances that you may want to use for benchmarking. This may require you to submit service quota increase requests, use [this link](https://docs.aws.amazon.com/servicequotas/latest/userguide/request-quota-increase.html) for submitting a service quota increase requests. This would usually mean increasing the CPU limits for your accounts, getting quota for certain instance types etc.
+
 - **EC2 Instance**: It is recommended to run the orchestrator on an EC2 instance, attaching the IAM Role with permissions, preferably located in the same AWS region where you plan to launch the multiple EC2 instances (although launching instances across regions is supported as well).
 
     - Use `Ubuntu` as the instance OS, specifically the `ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20240927` AMI.
@@ -69,12 +71,13 @@ The **FMBench Orchestrator** is a tool designed to automate the deployment and m
 
 ## Running FMBench Orchestrator:
 
-You can either use an existing config file included in this repo, such as `
+You can either use an existing config file included in this repo, such as [`configs/config.yml`](configs/config.yml) or create your own using the files provided in the [`configs`](configs) director as a template.
+
 ```bash
 python main.py -f configs/config.yml
 ```
 
-# FMBENCH Orchestrator Configuration Guide
+# FMBench orchestrator configuration guide
 
 ## Overview
 This configuration file is used to manage the deployment and orchestration of multiple EC2 instances for running FMBENCH benchmarks. The file defines various parameters, including AWS settings, run steps, security group settings, key pair management, and instance-specific configurations. This guide explains the purpose of each section and provides details on how to customize the file according to your requirements.
@@ -86,7 +89,7 @@ This section contains the basic settings required to interact with AWS services.
 
 - `region`: Specifies the AWS region where the EC2 instances will be launched. Ensure this is set to the region where you want to deploy your resources (e.g., `us-east-1`).
 - `iam_instance_profile_arn`: The Amazon Resource Name (ARN) of the IAM instance profile that will be attached to the EC2 instances. This profile should have the necessary permissions for the orchestrator's operations.
-- `hf_token_fp`: Your Hugging Face token for accessing specific resources or APIs. Replace `{hf_token_fp_here}` with your actual Hugging Face token filepath.
+- `hf_token_fpath`: Your Hugging Face token for accessing specific resources or APIs. Replace `{hf_token_fp_here}` with your actual Hugging Face token filepath.
 
 ### Run Steps
 Defines the various steps in the orchestration process. Set each step to `yes` or `no` based on whether you want that step to be executed.
@@ -114,6 +117,7 @@ Manages the SSH key pair used for accessing the EC2 instances.
 Defines the EC2 instances to be launched for running the benchmarks. This section can contain multiple instance configurations.
 
 - `instance_type`: The type of EC2 instance to be launched (e.g., `g5.2xlarge`). Choose based on your resource requirements.
+- `deploy`: (_Optional_, default: `yes`) set to `yes` if you want to run benchmarking on this instance, `no` otherwise (comes in handy if you want to skip a particular instance from the run but do not want to remove it from the config file).
 - `ami_id`: The Amazon Machine Image (AMI) ID to use for the instance. Different AMIs can be specified for different instance types.
 - `startup_script`: Path to the startup script that will be executed when the instance is launched. This script should be stored in the `startup_scripts` directory.
 - `post_startup_script`: Path to a script that will be executed after the initial startup script. Use this for any additional configuration or benchmark execution commands.
@@ -122,7 +126,7 @@ Defines the EC2 instances to be launched for running the benchmarks. This sectio
 ### Example Instance Configuration
 The following is an example configuration for deploying a `g5.2xlarge` and `g5.12xlarge` instance with specific AMI (Ubuntu Deep Learning OSS) and startup scripts:
 
-**Note:** This example uses html link for one, and local filepath for the other.
+**Note:** This example uses html link for one, and local file path for the other.
 
 ```yaml
 instances:
@@ -140,9 +144,6 @@ instances:
   CapacityReservationResourceGroupArn: {The ARN of the Capacity Reservation resource group in which to run the instance.}
   startup_script: startup_scripts/gpu_ubuntu_startup.txt
   post_startup_script: post_startup_scripts/fmbench.txt
-  fmbench_llm_tokenizer_fpath: fmbench_llm_utils/tokenizer.json
-  fmbench_llm_config_fpath: fmbench_llm_utils/config.json
-  fmbench_tokenizer_remote_dir: /tmp/fmbench-read/llama3_tokenizer/
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 1200
   fmbench_config: {fmbench_config_here}

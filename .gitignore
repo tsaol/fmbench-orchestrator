@@ -13,3 +13,5 @@ fmbench_llm_utils/
 .venv/
 configs/fmbench/
 results/
+analytics/__pycache__
+analytics/results

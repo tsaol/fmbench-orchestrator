@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 executor = ThreadPoolExecutor()
 
+
 def load_yaml_file(file_path: str) -> Dict:
     """
     Load and parse a YAML file.
@@ -35,7 +36,7 @@ def load_yaml_file(file_path: str) -> Dict:
     Returns:
         dict: Parsed content of the YAML file as a dictionary.
     """
-    try: 
+    try:
         config_file_data: Optional[Dict] = None
         if os.path.isfile(file_path):
             logger.info(f"{file_path} is a valid configuration file path.")
@@ -43,13 +44,11 @@ def load_yaml_file(file_path: str) -> Dict:
                 config_file_data = yaml.safe_load(file)
     except Exception as e:
         logger.error(f"Error while loading the YAML file: {e}")
-        config_file_data=None
+        config_file_data = None
     return config_file_data
 
 
-def _get_security_group_id_by_name(region: str,
-                                    group_name: str, 
-                                    vpc_id: int) -> str:
+def _get_security_group_id_by_name(region: str, group_name: str, vpc_id: int) -> str:
     """
     Retrieve the security group ID based on its name and VPC ID.
 
@@ -76,14 +75,13 @@ def _get_security_group_id_by_name(region: str,
             logger.error(f"Security group '{group_name}' not found in VPC '{vpc_id}'.")
     except Exception as e:
         logger.INFO(f"Error retrieving security group: {e}")
-        security_group_id=None
+        security_group_id = None
     return security_group_id
 
 
-def create_security_group(region: str,
-                          group_name: str, 
-                          description: str, 
-                          vpc_id: Optional[str] = None):
+def create_security_group(
+    region: str, group_name: str, description: str, vpc_id: Optional[str] = None
+):
     """
     Create an EC2 security group.
 
@@ -114,7 +112,7 @@ def create_security_group(region: str,
         if response is not None:
             security_group_id = response["GroupId"]
             logger.info(f"Security Group Created: {security_group_id}")
-        else: 
+        else:
             logger.error(f"Security group is not created.")
     except ClientError as e:
         # Check if the error is due to the group already existing
@@ -125,12 +123,11 @@ def create_security_group(region: str,
             return _get_security_group_id_by_name(region, group_name, vpc_id)
         else:
             print(f"Error creating security group: {e}")
-            security_group_id=None
+            security_group_id = None
     return security_group_id
 
 
-def authorize_inbound_rules(security_group_id: str, 
-                            region:str):
+def authorize_inbound_rules(security_group_id: str, region: str):
     """
     Authorize inbound rules to a security group.
 
@@ -169,8 +166,7 @@ def authorize_inbound_rules(security_group_id: str,
             logger.error(f"Error authorizing inbound rules: {e}")
 
 
-def create_key_pair(key_name: str, 
-                    region: str) -> str:
+def create_key_pair(key_name: str, region: str) -> str:
     """
     Create a new key pair for EC2 instances.
 
@@ -187,33 +183,35 @@ def create_key_pair(key_name: str,
         key_material: Optional[str] = None
         # Create a key pair
         response = ec2_client.create_key_pair(KeyName=key_name)
-        if response.get('KeyMaterial') is not None:
+        if response.get("KeyMaterial") is not None:
             # Extract the private key from the response
             key_material = response["KeyMaterial"]
             logger.info(f"Key {key_name} is created")
-        else: 
+        else:
             logger.error(f"Could not create key pair: {key_name}")
     except ClientError as e:
         logger.info(f"Error creating key pair: {e}")
-        key_material=None
+        key_material = None
     return key_material
 
 
-def create_ec2_instance(idx: int,
-                        key_name: str,
-                        security_group_id: str,
-                        user_data_script: str,
-                        ami: str,
-                        instance_type: str,
-                        iam_arn: str,
-                        region: str,
-                        device_name=DEFAULT_DEVICE_NAME,
-                        ebs_del_on_termination=True,
-                        ebs_Iops=EBS_IOPS,
-                        ebs_VolumeSize=EBS_VOLUME_SIZE,
-                        ebs_VolumeType=EBS_VOLUME_TYPE,
-                        CapacityReservationPreference=CAPACITY_RESERVATION_PREFERENCE,
-                        CapacityReservationTarget=None):
+def create_ec2_instance(
+    idx: int,
+    key_name: str,
+    security_group_id: str,
+    user_data_script: str,
+    ami: str,
+    instance_type: str,
+    iam_arn: str,
+    region: str,
+    device_name=DEFAULT_DEVICE_NAME,
+    ebs_del_on_termination=True,
+    ebs_Iops=EBS_IOPS,
+    ebs_VolumeSize=EBS_VOLUME_SIZE,
+    ebs_VolumeType=EBS_VOLUME_TYPE,
+    CapacityReservationPreference=CAPACITY_RESERVATION_PREFERENCE,
+    CapacityReservationTarget=None,
+):
     """
     Create an EC2 instance with a startup script (user data) in the specified region.
 
@@ -271,13 +269,15 @@ def create_ec2_instance(idx: int,
         if instances is not None:
             # Get the instance ID of the created instance
             instance_id = instances[0].id
-            logger.info(f"EC2 Instance '{instance_id}', '{instance_name}' created successfully with user data.")
-            instance_id=instance_id
+            logger.info(
+                f"EC2 Instance '{instance_id}', '{instance_name}' created successfully with user data."
+            )
+            instance_id = instance_id
         else:
             logger.error(f"Instances could not be created")
     except Exception as e:
         logger.error(f"Error creating EC2 instance: {e}")
-        instance_id=None
+        instance_id = None
     return instance_id
 
 
@@ -294,18 +294,18 @@ def delete_ec2_instance(instance_id: str, region: str) -> bool:
     """
     try:
         ec2_client = boto3.client("ec2", region_name=region)
-        has_instance_terminated: Optional[bool]=None
+        has_instance_terminated: Optional[bool] = None
         # Terminate the EC2 instance
         response = ec2_client.terminate_instances(InstanceIds=[instance_id])
         if response is not None:
             logger.info(f"Instance {instance_id} has been terminated.")
-            has_instance_terminated=True
-        else: 
+            has_instance_terminated = True
+        else:
             logger.error(f"Instance {instance_id}  could not be terminated")
-            has_instance_terminated=False
+            has_instance_terminated = False
     except Exception as e:
         logger.info(f"Error deleting instance {instance_id}: {e}")
-        has_instance_terminated=False
+        has_instance_terminated = False
     return has_instance_terminated
 
 
@@ -337,16 +337,16 @@ def _determine_username(ami_id: str, region: str):
                 return AMI_USERNAME_MAP[key]
 
         # Default username if no match is found
-        ec2_username=DEFAULT_EC2_USERNAME
+        ec2_username = DEFAULT_EC2_USERNAME
     except Exception as e:
         logger.info(f"Error fetching AMI details: {e}")
-        ec2_username=DEFAULT_EC2_USERNAME
+        ec2_username = DEFAULT_EC2_USERNAME
     return ec2_username
 
 
-def _get_ec2_hostname_and_username(instance_id: str, 
-                                   region: str, 
-                                   public_dns=True) -> Tuple:
+def _get_ec2_hostname_and_username(
+    instance_id: str, region: str, public_dns=True
+) -> Tuple:
     """
     Retrieve the public or private DNS name (hostname) and username of an EC2 instance.
     Args:
@@ -364,16 +364,18 @@ def _get_ec2_hostname_and_username(instance_id: str,
         if response is not None:
             # Extract instance information
             instance = response["Reservations"][0]["Instances"][0]
-            ami_id = instance.get("ImageId")  # Get the AMI ID used to launch the instance
+            ami_id = instance.get(
+                "ImageId"
+            )  # Get the AMI ID used to launch the instance
             # Check if the public DNS or private DNS is required
             if public_dns:
                 hostname = instance.get("PublicDnsName")
             else:
-                 hostname = instance.get("PrivateDnsName")
+                hostname = instance.get("PrivateDnsName")
             # instance name
             tags = response["Reservations"][0]["Instances"][0]["Tags"]
             logger.info(f"tags={tags}")
-            instance_name = [t['Value'] for t in tags if t['Key'] == 'Name'][0]  
+            instance_name = [t["Value"] for t in tags if t["Key"] == "Name"][0]
         # Determine the username based on the AMI ID
         username = _determine_username(ami_id, region)
     except Exception as e:
@@ -382,10 +384,9 @@ def _get_ec2_hostname_and_username(instance_id: str,
 
 
 # Function to check for 'results-*' folders in the root directory of an EC2 instance
-def _check_for_results_folder(hostname: str,
-                              instance_name: str,
-                              username: str,
-                              key_file_path: str) -> List:
+def _check_for_results_folder(
+    hostname: str, instance_name: str, username: str, key_file_path: str
+) -> List:
     """
     Checks if any folder matching the pattern exists in the root directory.
 
@@ -410,24 +411,32 @@ def _check_for_results_folder(hostname: str,
 
         # Connect to the instance
         ssh_client.connect(hostname, username=username, pkey=private_key)
-        logger.info(f"_check_for_results_folder, instance_name={instance_name}, connected to {hostname} as {username}")
+        logger.info(
+            f"_check_for_results_folder, instance_name={instance_name}, connected to {hostname} as {username}"
+        )
 
         # Execute the command to check for folders matching the pattern
         command = f"ls -d {FMBENCH_RESULTS_FOLDER_PATTERN}"
         stdin, stdout, stderr = ssh_client.exec_command(command)
         output = stdout.read().decode().strip()
         error = stderr.read().decode().strip()
-        logger.info(f"_check_for_results_folder, instance_name={instance_name}, output={output}, error={error}")
+        logger.info(
+            f"_check_for_results_folder, instance_name={instance_name}, output={output}, error={error}"
+        )
         # Close the connection
         ssh_client.close()
         if error:
             # No folder found or other errors
-            logger.info(f"_check_for_results_folder, instance_name={instance_name}, No matching folders found on {hostname}: {error}")
+            logger.info(
+                f"_check_for_results_folder, instance_name={instance_name}, No matching folders found on {hostname}: {error}"
+            )
             fmbench_result_folders = None
         else:
             # Split the output by newline to get folder names
             fmbench_result_folders = output.split("\n") if output else None
-            logger.info(f"_check_for_results_folder, instance_name={instance_name}, fmbench_result_folders={fmbench_result_folders}")
+            logger.info(
+                f"_check_for_results_folder, instance_name={instance_name}, fmbench_result_folders={fmbench_result_folders}"
+            )
     except Exception as e:
         logger.info(f"Error connecting via SSH to {hostname}: {e}")
         fmbench_result_folders = None
@@ -435,11 +444,13 @@ def _check_for_results_folder(hostname: str,
 
 
 # Function to retrieve folders from the EC2 instance
-def _get_folder_from_instance(hostname: str , 
-                              username: str, 
-                              key_file_path: str, 
-                              remote_folder: str, 
-                              local_folder: str) -> bool:
+def _get_folder_from_instance(
+    hostname: str,
+    username: str,
+    key_file_path: str,
+    remote_folder: str,
+    local_folder: str,
+) -> bool:
     """
     Retrieves a folder from the EC2 instance to the local machine using SCP.
 
@@ -468,19 +479,20 @@ def _get_folder_from_instance(hostname: str ,
         # Use SCP to copy the folder
         with SCPClient(ssh_client.get_transport()) as scp:
             scp.get(remote_folder, local_path=local_folder, recursive=True)
-        logger.info(f"Folder '{remote_folder}' retrieved successfully to '{local_folder}'.")
+        logger.info(
+            f"Folder '{remote_folder}' retrieved successfully to '{local_folder}'."
+        )
         # Close the connection
         ssh_client.close()
-        folder_retrieved=True
+        folder_retrieved = True
     except Exception as e:
         logger.error(f"Error retrieving folder from {hostname} via SCP: {e}")
-        folder_retrieved=False
+        folder_retrieved = False
     return folder_retrieved
 
 
 # Main function to check and retrieve 'results-*' folders from multiple instances
-def check_and_retrieve_results_folder(instance: Dict, 
-                                      local_folder_base: str):
+def check_and_retrieve_results_folder(instance: Dict, local_folder_base: str):
     """
     Checks for 'results-*' folders on a single EC2 instance and retrieves them if found.
 
@@ -492,7 +504,7 @@ def check_and_retrieve_results_folder(instance: Dict,
     Returns:
         None
     """
-    try: 
+    try:
         hostname = instance["hostname"]
         instance_name = instance["instance_name"]
         username = instance["username"]
@@ -500,16 +512,20 @@ def check_and_retrieve_results_folder(instance: Dict,
         instance_id = instance["instance_id"]
         logger.info(f"check_and_retrieve_results_folder, {instance['instance_name']}")
         # Check for 'results-*' folders in the specified directory
-        results_folders = _check_for_results_folder(hostname, instance_name, username, key_file_path)
-        logger.info(f"check_and_retrieve_results_folder, {instance_name}, result folders {results_folders}")
+        results_folders = _check_for_results_folder(
+            hostname, instance_name, username, key_file_path
+        )
+        logger.info(
+            f"check_and_retrieve_results_folder, {instance_name}, result folders {results_folders}"
+        )
         # If any folders are found, retrieve them
         for folder in results_folders:
             if folder:  # Check if folder name is not empty
                 # Create a local folder path for this instance
-                local_folder = os.path.join(
-                    local_folder_base, instance_name
+                local_folder = os.path.join(local_folder_base, instance_name)
+                logger.info(
+                    f"check_and_retrieve_results_folder, {instance_name}, going to download {folder} in {local_folder}"
                 )
-                logger.info(f"check_and_retrieve_results_folder, {instance_name}, going to download {folder} in {local_folder}")
                 if Path(local_folder).is_dir():
                     shutil.rmtree(local_folder)
                 os.makedirs(local_folder)  # Create local directory
@@ -519,10 +535,14 @@ def check_and_retrieve_results_folder(instance: Dict,
                 _get_folder_from_instance(
                     hostname, username, key_file_path, folder, local_folder
                 )
-                logger.info(f"check_and_retrieve_results_folder, {instance_name}, folder={folder} downloaded")
-        
+                logger.info(
+                    f"check_and_retrieve_results_folder, {instance_name}, folder={folder} downloaded"
+                )
+
     except Exception as e:
-        logger.error(f"Error occured while attempting to check and retrieve results from the instances: {e}")
+        logger.error(
+            f"Error occured while attempting to check and retrieve results from the instances: {e}"
+        )
 
 
 def generate_instance_details(instance_id_list, instance_data_map):
@@ -574,7 +594,7 @@ def generate_instance_details(instance_id_list, instance_data_map):
         fmbench_llm_tokenizer_fpath = config_entry.get("fmbench_llm_tokenizer_fpath")
         fmbench_llm_config_fpath = config_entry.get("fmbench_llm_config_fpath")
         fmbench_tokenizer_remote_dir = config_entry.get("fmbench_tokenizer_remote_dir")
-        byo_dataset_fpath =  config_entry.get("byo_dataset_fpath")
+        byo_dataset_fpath = config_entry.get("byo_dataset_fpath")
         fmbench_complete_timeout = config_entry["fmbench_complete_timeout"]
         region = config_entry["region"]
         PRIVATE_KEY_FNAME = config_entry["PRIVATE_KEY_FNAME"]
@@ -604,7 +624,7 @@ def generate_instance_details(instance_id_list, instance_data_map):
                     "fmbench_tokenizer_remote_dir": fmbench_tokenizer_remote_dir,
                     "byo_dataset_fpath": byo_dataset_fpath,
                     "fmbench_complete_timeout": fmbench_complete_timeout,
-                    "region": config_entry.get("region", "us-east-1")
+                    "region": config_entry.get("region", "us-east-1"),
                 }
             )
         else:
@@ -613,7 +633,10 @@ def generate_instance_details(instance_id_list, instance_data_map):
             )
     return instance_details
 
-def run_command_on_instances(instance_details: List, key_file_path: str, command: str) -> Dict:
+
+def run_command_on_instances(
+    instance_details: List, key_file_path: str, command: str
+) -> Dict:
     """
     Executes a command on multiple EC2 instances using the instance_details list.
 
@@ -629,7 +652,11 @@ def run_command_on_instances(instance_details: List, key_file_path: str, command
     results: Dict = {}
 
     for instance in instance_details:
-        hostname, username, instance_name = instance["hostname"], instance["username"], instance["instance_name"]
+        hostname, username, instance_name = (
+            instance["hostname"],
+            instance["username"],
+            instance["instance_name"],
+        )
         logger.info(f"Running command on {instance_name}, {hostname} as {username}...")
         try:
             with paramiko.SSHClient() as ssh_client:
@@ -647,15 +674,17 @@ def run_command_on_instances(instance_details: List, key_file_path: str, command
                 }
         except Exception as e:
             logger.error(f"Error connecting to {hostname} or executing command: {e}")
-            results[hostname] = {"stdout": "", "stderr": str(e), "exit_status": -1} 
+            results[hostname] = {"stdout": "", "stderr": str(e), "exit_status": -1}
     return results
 
 
-def upload_and_execute_script_invoke_shell(hostname: str, 
-                                            username: str, 
-                                            key_file_path: str, 
-                                            script_content: str, 
-                                            remote_script_path) -> str:
+def upload_and_execute_script_invoke_shell(
+    hostname: str,
+    username: str,
+    key_file_path: str,
+    script_content: str,
+    remote_script_path,
+) -> str:
     """
     Uploads a bash script to the EC2 instance and executes it via an interactive SSH shell.
 
@@ -690,7 +719,9 @@ def upload_and_execute_script_invoke_shell(hostname: str,
                 shell.send(f"chmod +x {remote_script_path}\n")
                 time.sleep(1)  # Wait for the command to complete
 
-                shell.send(f"nohup bash {remote_script_path} > $HOME/run_fmbench_nohup.log 2>&1 & disown\n")
+                shell.send(
+                    f"nohup bash {remote_script_path} > $HOME/run_fmbench_nohup.log 2>&1 & disown\n"
+                )
                 time.sleep(1)  # Wait for the command to complete
 
                 while shell.recv_ready():
@@ -701,7 +732,7 @@ def upload_and_execute_script_invoke_shell(hostname: str,
                 ssh_client.close()
     except Exception as e:
         logger.error(f"Error connecting via SSH to {hostname}: {e}")
-        output=""
+        output = ""
     return output
 
 
@@ -711,7 +742,9 @@ async def download_config_async(url, download_dir=DOWNLOAD_DIR_FOR_CFG_FILES):
     os.makedirs(download_dir, exist_ok=True)
     local_path = os.path.join(download_dir, os.path.basename(url))
     if os.path.exists(local_path):
-        logger.info(f"{local_path} already existed, deleting it first before downloading again")
+        logger.info(
+            f"{local_path} already existed, deleting it first before downloading again"
+        )
         os.remove(local_path)
     # Run the blocking download operation in a separate thread
     await asyncio.get_event_loop().run_in_executor(
@@ -749,6 +782,7 @@ async def upload_file_to_instance_async(
             ssh_client.close()
         except Exception as e:
             logger.info(f"Error uploading files to {hostname}: {e}")
+
     # Run the blocking upload operation in a separate thread
     await asyncio.get_event_loop().run_in_executor(None, upload_files)
 
@@ -766,7 +800,11 @@ async def upload_config_and_tokenizer(
 
 
 async def upload_byo_dataset(
-    hostname, username, key_file_path, byo_dataset_path, byo_remote_path = BYO_DATASET_FILE_PATH
+    hostname,
+    username,
+    key_file_path,
+    byo_dataset_path,
+    byo_remote_path=BYO_DATASET_FILE_PATH,
 ):
     # List of files to upload
     local_paths = [byo_dataset_path]
@@ -775,6 +813,7 @@ async def upload_byo_dataset(
     await upload_file_to_instance_async(
         hostname, username, key_file_path, local_paths, byo_remote_path
     )
+
 
 # Asynchronous function to handle the configuration file
 async def handle_config_file_async(instance):
@@ -809,7 +848,9 @@ async def handle_config_file_async(instance):
     return remote_config_path
 
 
-def _check_completion_flag(hostname, username, key_file_path, flag_file_path=STARTUP_COMPLETE_FLAG_FPATH):
+def _check_completion_flag(
+    hostname, username, key_file_path, flag_file_path=STARTUP_COMPLETE_FLAG_FPATH
+):
     """
     Checks if the startup flag file exists on the EC2 instance.
 
@@ -832,7 +873,7 @@ def _check_completion_flag(hostname, username, key_file_path, flag_file_path=STA
 
         # Connect to the instance
         ssh_client.connect(hostname, username=username, pkey=private_key)
-        
+
         # Check if the flag file exists
         stdin, stdout, stderr = ssh_client.exec_command(
             f"test -f {flag_file_path} && echo 'File exists'"
@@ -851,12 +892,13 @@ def _check_completion_flag(hostname, username, key_file_path, flag_file_path=STA
         return False
 
 
-def wait_for_flag(instance,
-                  flag_file_path,
-                  log_file_path,
-                  max_wait_time=MAX_WAIT_TIME_FOR_STARTUP_SCRIPT_IN_SECONDS,
-                  check_interval=SCRIPT_CHECK_INTERVAL_IN_SECONDS,
-                  ) -> bool:
+def wait_for_flag(
+    instance,
+    flag_file_path,
+    log_file_path,
+    max_wait_time=MAX_WAIT_TIME_FOR_STARTUP_SCRIPT_IN_SECONDS,
+    check_interval=SCRIPT_CHECK_INTERVAL_IN_SECONDS,
+) -> bool:
     """
     Waits for the startup flag file on the EC2 instance, and returns the script if the flag file is found.
 
@@ -869,23 +911,86 @@ def wait_for_flag(instance,
     """
     end_time = time.time() + max_wait_time
     startup_complete: bool = False
-    logger.info(f"going to wait {max_wait_time}s for the startup script for {instance['instance_name']} to complete")
-    logger.info("-----------------------------------------------------------------------------------------------")
-    logger.info(f"you can open another terminal and see the startup logs from this machine using the following command")
-    logger.info(f"ssh -i {instance['key_file_path']} {instance['username']}@{instance['hostname']} \'tail -f {log_file_path}\'")
-    logger.info("-----------------------------------------------------------------------------------------------")
+    logger.info(
+        f"going to wait {max_wait_time}s for the startup script for {instance['instance_name']} to complete"
+    )
+    logger.info(
+        "-----------------------------------------------------------------------------------------------"
+    )
+    logger.info(
+        f"you can open another terminal and see the startup logs from this machine using the following command"
+    )
+    logger.info(
+        f"ssh -i {instance['key_file_path']} {instance['username']}@{instance['hostname']} 'tail -f {log_file_path}'"
+    )
+    logger.info(
+        "-----------------------------------------------------------------------------------------------"
+    )
     while time.time() < end_time:
         completed = _check_completion_flag(
             hostname=instance["hostname"],
             username=instance["username"],
             key_file_path=instance["key_file_path"],
-            flag_file_path=flag_file_path)
+            flag_file_path=flag_file_path,
+        )
         if completed is True:
             logger.info(f"{flag_file_path} flag file found!!")
             break
         else:
             time_remaining = end_time - time.time()
-            logger.warning(f"Waiting for {flag_file_path}, instance_name={instance['instance_name']}..., seconds until timeout={int(time_remaining)}s")
+            logger.warning(
+                f"Waiting for {flag_file_path}, instance_name={instance['instance_name']}..., seconds until timeout={int(time_remaining)}s"
+            )
             time.sleep(check_interval)
-    logger.error(f"max_wait_time={max_wait_time} expired and the script for {instance['hostname']} has still not completed, exiting, ")
+    logger.error(
+        f"max_wait_time={max_wait_time} expired and the script for {instance['hostname']} has still not completed, exiting, "
+    )
     return completed
+
+
+# Function to upload folders to the EC2 instance
+def _put_folder_to_instance(
+    hostname: str,
+    username: str,
+    key_file_path: str,
+    local_folder: str,
+    remote_folder: str,
+) -> bool:
+    """
+    Uploads a folder from the local machine to the EC2 instance using SCP.
+
+    Args:
+        hostname (str): The public IP or DNS of the EC2 instance.
+        username (str): The SSH username (e.g., 'ec2-user').
+        key_file_path (str): The path to the PEM key file.
+        local_folder (str): The local path of the folder to upload.
+        remote_folder (str): The path on the EC2 instance where the folder should be saved.
+
+    Returns:
+        bool: True if the folder was uploaded successfully, False otherwise.
+    """
+    try:
+        folder_uploaded: bool = False
+        # Initialize the SSH client
+        ssh_client = paramiko.SSHClient()
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+        # Load the private key
+        private_key = paramiko.RSAKey.from_private_key_file(key_file_path)
+
+        # Connect to the instance
+        ssh_client.connect(hostname, username=username, pkey=private_key)
+
+        # Use SCP to copy the folder
+        with SCPClient(ssh_client.get_transport()) as scp:
+            scp.put(local_folder, remote_path=remote_folder, recursive=True)
+        logger.info(
+            f"Folder '{local_folder}' uploaded successfully to '{remote_folder}'."
+        )
+        # Close the connection
+        ssh_client.close()
+        folder_uploaded = True
+    except Exception as e:
+        logger.error(f"Error uploading folder to {hostname} via SCP: {e}")
+        folder_uploaded = False
+    return folder_uploaded

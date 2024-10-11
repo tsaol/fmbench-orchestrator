@@ -1,0 +1,67 @@
+Content-Type: multipart/mixed; boundary="//"
+MIME-Version: 1.0
+
+--//
+Content-Type: text/cloud-config; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="cloud-config.txt"
+
+#cloud-config
+cloud_final_modules:
+- [scripts-user, always]
+
+--//
+Content-Type: text/x-shellscript; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="userdata.txt"
+
+#!/bin/bash
+cd /home/ubuntu/
+
+# Install Docker and Git using the YUM package manager
+sudo yum install docker git -y
+
+# Start the Docker service
+sudo systemctl start docker
+
+# Switch to ec2 user and run the following commands
+sudo -u ec2-user -i bash << 'EOF'
+# Download and install Miniconda
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /home/ubuntu/Miniconda3-latest-Linux-x86_64.sh
+bash /home/ubuntu/Miniconda3-latest-Linux-x86_64.sh -b -p /home/ubuntu/miniconda3
+rm /home/ubuntu/Miniconda3-latest-Linux-x86_64.sh
+
+# Initialize conda for bash shell
+/home/ubuntu/miniconda3/bin/conda init
+
+# Create a new conda environment
+/home/ubuntu/miniconda3/bin/conda create --name fmbench_python311 -y python=3.11 ipykernel
+# Activate the environment and install fmbench
+source /home/ubuntu/miniconda3/bin/activate fmbench_python311
+pip install -U fmbench
+
+sudo usermod -a -G docker $USER
+newgrp docker
+
+# curl the docker file for triton
+curl -o ./Dockerfile_triton https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/main/src/fmbench/scripts/triton/Dockerfile_triton
+
+# curl the script that builds and pushes the triton image locally
+curl -o build_and_push_triton.sh https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/main/src/fmbench/scripts/triton/build_and_push_triton.sh
+
+# Make the triton build and push script executable, and run it
+chmod +x build_and_push_triton.sh
+./build_and_push_triton.sh
+
+# Download content from S3 using the provided script
+curl -s https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/main/copy_s3_content.sh | sh -s -- /tmp
+echo "__HF_TOKEN__" > /tmp/fmbench-read/scripts/hf_token.txt
+
+# Add the conda environment activation and directory navigation to .bashrc
+echo 'source /home/ubuntu/miniconda3/bin/activate fmbench_python311' >> /home/ubuntu/.bashrc
+
+source /home/ubuntu/.bashrc
+touch /tmp/startup_complete.flag
+EOF

@@ -53,7 +53,7 @@ echo "__HF_TOKEN__" > /tmp/fmbench-read/scripts/hf_token.txt
 echo 'source /home/ubuntu/miniconda3/bin/activate fmbench_python311' >> /home/ubuntu/.bashrc
 
 
-neuron="${neuron:-True}"
+neuron="__neuron__"
 
 # Check if neuron_ls is successful and neuron flag is set to True
 if neuron-ls && [ "$neuron" = "True" ]; then

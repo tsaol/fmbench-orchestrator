@@ -235,6 +235,8 @@ if __name__ == "__main__":
                 user_data_script = file.read()
                 # Replace the hf token in the bash script to pull the HF model
                 user_data_script = user_data_script.replace("__HF_TOKEN__", hf_token)
+                user_data_script = user_data_script.replace("__neuron__", "True")
+
             if instance.get("instance_id") is None:
                 instance_type = instance["instance_type"]
                 ami_id = instance["ami_id"]

@@ -56,7 +56,7 @@ echo 'source /home/ubuntu/miniconda3/bin/activate fmbench_python311' >> /home/ub
 neuron="${1:-True}"
 
 # Check if neuron_ls is successful and neuron flag is set to True
-if neuron_ls && [ "$neuron" = "True" ]; then
+if neuron-ls && [ "$neuron" = "True" ]; then
     # Download the Dockerfile for Triton
     curl -o ./Dockerfile_triton https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/main/src/fmbench/scripts/triton/Dockerfile_triton
 

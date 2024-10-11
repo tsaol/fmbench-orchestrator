@@ -1,6 +1,7 @@
 #cd /home/ubuntu/foundation-model-benchmarking-tool;
 source activate fmbench_python311;
 . ~/.bashrc;
+
 if [[ "$CONDA_DEFAULT_ENV" == "fmbench_python311" ]]; then
     echo "The current environment is fmbench_python311. Running FMBench..."
     

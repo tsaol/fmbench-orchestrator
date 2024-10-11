@@ -52,6 +52,25 @@ echo "__HF_TOKEN__" > /tmp/fmbench-read/scripts/hf_token.txt
 # Add the conda environment activation and directory navigation to .bashrc
 echo 'source /home/ubuntu/miniconda3/bin/activate fmbench_python311' >> /home/ubuntu/.bashrc
 
+
+neuron="${1:-True}"
+
+# Check if neuron_ls is successful and neuron flag is set to True
+if neuron_ls && [ "$neuron" = "True" ]; then
+    # Download the Dockerfile for Triton
+    curl -o ./Dockerfile_triton https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/main/src/fmbench/scripts/triton/Dockerfile_triton
+
+    # Download the script that builds and pushes the Triton image locally
+    curl -o build_and_push_triton.sh https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/main/src/fmbench/scripts/triton/build_and_push_triton.sh
+
+    # Make the build and push script executable
+    chmod +x build_and_push_triton.sh
+
+    # Run the build and push script
+    ./build_and_push_triton.sh
+fi
+
+
 # install triton inference server
 cd ~
 git clone https://github.com/triton-inference-server/tensorrtllm_backend.git  --branch v0.12.0

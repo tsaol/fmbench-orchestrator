@@ -264,13 +264,15 @@ def create_ec2_instance(
                 },
             ],
             ImageId=ami,
-            InstanceType=instance_type,
-            KeyName=key_name,
-            SecurityGroupIds=[security_group_id],
-            UserData=user_data_script,
-            MinCount=1,
-            MaxCount=1,
-            IamInstanceProfile={"Arn": iam_arn},
+            InstanceType=instance_type,  # Instance type
+            KeyName=key_name,  # Name of the key pair
+            SecurityGroupIds=[security_group_id],  # Security group ID
+            UserData=user_data_script,  # The user data script to run on startup
+            MinCount=MIN_INSTANCE_COUNT,  # Minimum number of instances to launch
+            MaxCount=MAX_INSTANCE_COUNT,  # Maximum number of instances to launch
+            IamInstanceProfile={  # IAM role to associate with the instance
+                "Arn": iam_arn
+            },
             CapacityReservationSpecification=capacity_reservation_spec,
             TagSpecifications=[
                 {

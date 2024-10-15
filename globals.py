@@ -3,6 +3,7 @@ import json
 import boto3
 import logging
 import requests
+import paramiko
 from constants import *
 from typing import Tuple
 from utils import create_security_group, load_yaml_file
@@ -224,6 +225,50 @@ def create_iam_instance_profile_arn():
             logger.info(f"Iam instance profile already exists. Skipping...")
         else:
             logger.error(f"Error creating the instance profile iam: {e}")
+
+
+def upload_and_run_script(instance_id: str, 
+                            private_key_path: str, 
+                            user_data_script: str, 
+                            region: str, 
+                            startup_script: str) -> bool:
+    """
+    Runs the user data as a script in the case of which an instance is pre existing. This is because
+    the user script of an instance can only be modified when it is stopped.
+    """
+    ec2_client = boto3.client('ec2', region_name=region)
+    has_start_up_script_executed: bool = False
+    try:
+        # Get instance public IP
+        response = ec2_client.describe_instances(InstanceIds=[instance_id])
+        public_ip = response['Reservations'][0]['Instances'][0]['PublicIpAddress']
+
+        # Create SSH client
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        
+        # Connect to the instance
+        ssh.connect(hostname=public_ip, username='ubuntu', key_filename=private_key_path)
+
+        # Upload the script
+        with ssh.open_sftp() as sftp:
+            with sftp.file('/tmp/startup_script.sh', 'w') as f:
+                f.write(user_data_script)
+
+        # Make the script executable and run it
+        stdin, stdout, stderr = ssh.exec_command('chmod +x /tmp/startup_script.sh && sudo /tmp/startup_script.sh')
+        
+        # Print output
+        for line in stdout:
+            logger.info(line.strip('\n'))
+        for line in stderr:
+            logger.info(line.strip('\n'))
+        ssh.close()
+        logger.info(f"Script uploaded and executed on instance {instance_id}")
+        has_start_up_script_executed=True
+    except Exception as e:
+        logger.error(f"Error uploading and running script on instance {instance_id}: {e}")
+    return has_start_up_script_executed
 
 
 def get_sg_id(region: str) -> str:

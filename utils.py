@@ -209,25 +209,47 @@ def create_ec2_instance(
     ebs_Iops=EBS_IOPS,
     ebs_VolumeSize=EBS_VOLUME_SIZE,
     ebs_VolumeType=EBS_VOLUME_TYPE,
-    CapacityReservationPreference=CAPACITY_RESERVATION_PREFERENCE,
-    CapacityReservationTarget=None,
+    CapacityReservationPreference=None,
+    CapacityReservationId=None,
+    CapacityReservationResourceGroupArn=None,
 ):
     """
     Create an EC2 instance with a startup script (user data) in the specified region.
 
     Args:
+        idx (int): Index or identifier for the instance.
         key_name (str): The name of the key pair to associate with the instance.
         security_group_id (str): The ID of the security group to associate with the instance.
         user_data_script (str): The script to run on startup.
+        ami (str): The ID of the AMI to use for the instance.
+        instance_type (str): The type of instance to launch.
+        iam_arn (str): The ARN of the IAM role to associate with the instance.
         region (str): The AWS region to launch the instance in.
+        device_name (str): The device name for the EBS volume.
+        ebs_del_on_termination (bool): Whether to delete the EBS volume on instance termination.
+        ebs_Iops (int): The number of I/O operations per second for the EBS volume.
+        ebs_VolumeSize (int): The size of the EBS volume in GiB.
+        ebs_VolumeType (str): The type of EBS volume.
+        CapacityReservationPreference (str): The capacity reservation preference.
+        CapacityReservationTarget (dict): The capacity reservation target specifications.
 
     Returns:
         str: The ID of the created instance.
     """
     ec2_resource = boto3.resource("ec2", region_name=region)
+    instance_id: Optional[str] = None
     try:
-        instance_id: Optional[str] = None
         instance_name: str = f"FMBench-{instance_type}-{idx}"
+        
+        # Prepare the CapacityReservationSpecification
+        capacity_reservation_spec = {}
+        if CapacityReservationId:
+            capacity_reservation_spec["CapacityReservationTarget"] = {"CapacityReservationId": CapacityReservationId}
+        elif CapacityReservationResourceGroupArn:
+            capacity_reservation_spec["CapacityReservationTarget"] = {"CapacityReservationResourceGroupArn": CapacityReservationResourceGroupArn}
+        elif CapacityReservationPreference:
+            capacity_reservation_spec["CapacityReservationPreference"] = CapacityReservationPreference
+
         # Create a new EC2 instance with user data
         instances = ec2_resource.create_instances(
             BlockDeviceMappings=[
@@ -251,14 +273,7 @@ def create_ec2_instance(
             IamInstanceProfile={  # IAM role to associate with the instance
                 "Arn": iam_arn
             },
-            CapacityReservationSpecification={
-                "CapacityReservationPreference": CapacityReservationPreference,
-                **(
-                    {"CapacityReservationTarget": CapacityReservationTarget}
-                    if CapacityReservationTarget
-                    else {}
-                ),
-            },
+            CapacityReservationSpecification=capacity_reservation_spec,
             TagSpecifications=[
                 {
                     "ResourceType": "instance",
@@ -266,18 +281,15 @@ def create_ec2_instance(
                 }
             ],
         )
-        if instances is not None:
-            # Get the instance ID of the created instance
+
+        if instances:
             instance_id = instances[0].id
-            logger.info(
-                f"EC2 Instance '{instance_id}', '{instance_name}' created successfully with user data."
-            )
-            instance_id = instance_id
+            logger.info(f"EC2 Instance '{instance_id}', '{instance_name}' created successfully with user data.")
         else:
-            logger.error(f"Instances could not be created")
+            logger.error("Instances could not be created")
     except Exception as e:
         logger.error(f"Error creating EC2 instance: {e}")
-        instance_id = None
+        instance_id=None
     return instance_id
 
 

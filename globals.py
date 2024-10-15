@@ -259,12 +259,10 @@ def get_key_pair(region):
 
     # Generate the key pair name using the format: config_name-region
     config_name = config_data["key_pair_gen"]["key_pair_name"]
-    key_pair_name = (
-        f"{config_name}-{region}"  # Create the key pair name as config_name-region
-    )
-    private_key_fname = os.path.join(
-        key_pair_dir, f"{key_pair_name}.pem"
-    )  # Ensure .pem is added once
+    
+    # Generate the key pair name using the format: config_name-region
+    key_pair_name = f"{config_name}-{region}" if config_data["run_steps"]["key_pair_generation"] else config_name
+    private_key_fname = os.path.join(key_pair_dir, f"{key_pair_name}.pem")
 
     # Check if key pair generation is enabled
     if config_data["run_steps"]["key_pair_generation"]:

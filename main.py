@@ -255,22 +255,13 @@ if __name__ == "__main__":
                     "CapacityReservationResourceGroupArn", None
                 )
 
-                # Initialize CapacityReservationTarget only if either CapacityReservationId or CapacityReservationResourceGroupArn is provided
-                CapacityReservationTarget = {}
                 if CapacityReservationId:
-                    CapacityReservationTarget["CapacityReservationId"] = (
-                        CapacityReservationId
-                    )
-                if CapacityReservationResourceGroupArn:
-                    CapacityReservationTarget["CapacityReservationResourceGroupArn"] = (
-                        CapacityReservationResourceGroupArn
-                    )
+                    logger.info(f"Capacity reservation id provided: {CapacityReservationId}")
+                elif CapacityReservationResourceGroupArn:
+                    logger.info(f"Capacity reservation resource group ARN provided: {CapacityReservationResourceGroupArn}")
+                else:
+                    logger.info("No capacity reservation specified, using default preference")
 
-                # If CapacityReservationTarget is empty, set it to None
-                if not CapacityReservationTarget:
-                    CapacityReservationTarget = None
-
-                # user_data_script += command_to_run
                 # Create an EC2 instance with the user data script
                 instance_id = create_ec2_instance(
                     idx,
@@ -287,7 +278,8 @@ if __name__ == "__main__":
                     ebs_VolumeSize,
                     ebs_VolumeType,
                     CapacityReservationPreference,
-                    CapacityReservationTarget,
+                    CapacityReservationId,
+                    CapacityReservationResourceGroupArn
                 )
                 instance_id_list.append(instance_id)
                 instance_data_map[instance_id] = {

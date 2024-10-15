@@ -26,6 +26,7 @@ from globals import (
     get_iam_role,
     get_sg_id,
     get_key_pair,
+    upload_and_run_script,
 )
 
 executor = ThreadPoolExecutor()
@@ -306,8 +307,12 @@ if __name__ == "__main__":
                     "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
                    "byo_dataset_fpath": instance.get("byo_dataset_fpath")
                 }
-            if instance.get("instance_id") is not None:
+            else:
                 instance_id = instance["instance_id"]
+                if upload_and_run_script(instance_id, PRIVATE_KEY_FNAME, user_data_script, instance["region"], instance['startup_script']):
+                    logger.info(f"Startup script uploaded and executed on instance {instance_id}")
+                else:
+                    logger.error(f"Failed to upload and execute startup script on instance {instance_id}")
                 # TODO: Check if host machine can open the private key provided, if it cant, raise exception
                 PRIVATE_KEY_FNAME = instance["private_key_fname"]
                 if not PRIVATE_KEY_FNAME:

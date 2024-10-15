@@ -260,7 +260,7 @@ def main():
         col_name = f"instance_count_and_cost_{rpm}_rpm"
         df_summary_all[col_name] = df_summary_all.apply(lambda r: cost_per_n_rpm(r, rpm, pricing), axis=1)
 
-    df_summary_all = df_summary_all.sort_values(by="cost_per_1k_tokens")
+    df_summary_all = df_summary_all.sort_values(by="cost_per_1k_tokens")    
     summary_file: str = os.path.join(ANALYTICS_RESULTS_DIR,
                                      f"{args.model_id}-summary-p95-latency={args.latency_threshold}s.csv")
     df_summary_all.to_csv(summary_file, index=False)
@@ -272,6 +272,14 @@ def main():
                                                          f"{args.model_id}-summary-{Path(args.payload_file).stem}-p95-latency-concurrency={args.latency_threshold}s-raw.csv")                                       
     df_summary_payload_of_interest = df_summary_all[df_summary_all.payload_file == args.payload_file]
     df_summary_payload_of_interest = df_summary_payload_of_interest.sort_values(by="cost_per_1k_tokens")
+    df_summary_payload_of_interest['transactions_per_second'] = df_summary_payload_of_interest.transactions_per_minute/60
+    df_summary_payload_of_interest['transactions_per_second'] = df_summary_payload_of_interest['transactions_per_second'].astype(int)
+    # place it next to transactions per minute
+    cols = df_summary_payload_of_interest.columns.tolist() 
+    index_to_insert = cols.index('transactions_per_minute') + 1  # Get the position after 'transactions_per_minute'
+    cols.insert(index_to_insert, cols.pop(cols.index('transactions_per_second')))  # Insert 'transactions_per_second' after 'transactions_per_minute'
+    df_summary_payload_of_interest = df_summary_payload_of_interest[cols]
+
     # create a csv file with all the raw metrics
     df_summary_payload_of_interest.to_csv(summary_file_payload_of_interest_raw_metrics, index=False)
     cols_to_remove = ['payload_file', 'instance_count', 'error_rate', 'prompt_token_count_mean', 'prompt_token_throughput', 'completion_token_count_mean', 'latency_p50',
@@ -280,7 +288,7 @@ def main():
     df_summary_payload_of_interest_trimmed = df_summary_payload_of_interest.drop(columns=cols_to_remove)
     df_summary_payload_of_interest_trimmed_grouped = df_summary_payload_of_interest_trimmed.loc[df_summary_payload_of_interest_trimmed.groupby('instance_type')['concurrency'].idxmax()].reset_index()
     df_summary_payload_of_interest_trimmed_grouped.to_csv(summary_file_payload_of_interest, index=False)
-    logger.info("all done")
+
 
     # cost RPM plot, the function saves the html to a file
     heatmap_fname: str = os.path.join(ANALYTICS_RESULTS_DIR,
@@ -314,6 +322,6 @@ def main():
                         args.model_id,
                         subtitle)
 
-
+    logger.info("all done")
 if __name__ == "__main__":
     main()

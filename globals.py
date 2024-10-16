@@ -6,7 +6,7 @@ import requests
 import paramiko
 from constants import *
 from typing import Tuple
-from utils import create_security_group, load_yaml_file
+from utils import create_security_group, load_yaml_file, _get_ec2_hostname_and_username
 from utils import authorize_inbound_rules, create_key_pair
 from botocore.exceptions import NoCredentialsError, ClientError
 
@@ -240,15 +240,14 @@ def upload_and_run_script(instance_id: str,
     has_start_up_script_executed: bool = False
     try:
         # Get instance public IP
-        response = ec2_client.describe_instances(InstanceIds=[instance_id])
-        public_ip = response['Reservations'][0]['Instances'][0]['PublicIpAddress']
+        hostname, username, instance_name = _get_ec2_hostname_and_username(instance_id, region)
 
         # Create SSH client
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         
         # Connect to the instance
-        ssh.connect(hostname=public_ip, username='ubuntu', key_filename=private_key_path)
+        ssh.connect(hostname=hostname, username=username, key_filename=private_key_path)
 
         # Upload the script
         with ssh.open_sftp() as sftp:

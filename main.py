@@ -62,7 +62,7 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
     )
 
     if startup_complete:
-        if instance['byo_dataset_fpath']:
+        if instance["byo_dataset_fpath"]:
             await upload_byo_dataset(
                 instance["hostname"],
                 instance["username"],
@@ -256,11 +256,17 @@ if __name__ == "__main__":
                 )
 
                 if CapacityReservationId:
-                    logger.info(f"Capacity reservation id provided: {CapacityReservationId}")
+                    logger.info(
+                        f"Capacity reservation id provided: {CapacityReservationId}"
+                    )
                 elif CapacityReservationResourceGroupArn:
-                    logger.info(f"Capacity reservation resource group ARN provided: {CapacityReservationResourceGroupArn}")
+                    logger.info(
+                        f"Capacity reservation resource group ARN provided: {CapacityReservationResourceGroupArn}"
+                    )
                 else:
-                    logger.info("No capacity reservation specified, using default preference")
+                    logger.info(
+                        "No capacity reservation specified, using default preference"
+                    )
 
                 # Create an EC2 instance with the user data script
                 instance_id = create_ec2_instance(
@@ -279,7 +285,7 @@ if __name__ == "__main__":
                     ebs_VolumeType,
                     CapacityReservationPreference,
                     CapacityReservationId,
-                    CapacityReservationResourceGroupArn
+                    CapacityReservationResourceGroupArn,
                 )
                 instance_id_list.append(instance_id)
                 instance_data_map[instance_id] = {
@@ -297,19 +303,29 @@ if __name__ == "__main__":
                     "fmbench_complete_timeout": instance["fmbench_complete_timeout"],
                     "region": instance["region"],
                     "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
-                   "byo_dataset_fpath": instance.get("byo_dataset_fpath")
+                    "byo_dataset_fpath": instance.get("byo_dataset_fpath"),
                 }
             else:
                 instance_id = instance["instance_id"]
-                if upload_and_run_script(instance_id, PRIVATE_KEY_FNAME, user_data_script, instance["region"], instance['startup_script']):
-                    logger.info(f"Startup script uploaded and executed on instance {instance_id}")
-                else:
-                    logger.error(f"Failed to upload and execute startup script on instance {instance_id}")
                 # TODO: Check if host machine can open the private key provided, if it cant, raise exception
                 PRIVATE_KEY_FNAME = instance["private_key_fname"]
                 if not PRIVATE_KEY_FNAME:
                     logger.error(
                         "Private key not found, not adding instance to instance id list"
+                    )
+                if upload_and_run_script(
+                    instance_id,
+                    PRIVATE_KEY_FNAME,
+                    user_data_script,
+                    instance["region"],
+                    instance["startup_script"],
+                ):
+                    logger.info(
+                        f"Startup script uploaded and executed on instance {instance_id}"
+                    )
+                else:
+                    logger.error(
+                        f"Failed to upload and execute startup script on instance {instance_id}"
                     )
                 if PRIVATE_KEY_FNAME:
                     instance_id_list.append(instance_id)
@@ -330,8 +346,9 @@ if __name__ == "__main__":
                         ],
                         "region": instance["region"],
                         "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
-                        "byo_dataset_fpath": instance.get("byo_dataset_fpath")
+                        "byo_dataset_fpath": instance.get("byo_dataset_fpath"),
                     }
+
                 logger.info(f"done creating instance {idx} of {num_instances}")
 
     sleep_time = 60

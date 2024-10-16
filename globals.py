@@ -15,13 +15,16 @@ logger = logging.getLogger(__name__)
 
 config_data = {}
 
+
 def get_region() -> str:
-    try: 
+    try:
         session = boto3.session.Session()
         region_name = session.region_name
         if region_name is None:
-            logger.info(f"boto3.session.Session().region_name is {region_name}, "
-                    f"going to use an metadata api to determine region name")
+            logger.info(
+                f"boto3.session.Session().region_name is {region_name}, "
+                f"going to use an metadata api to determine region name"
+            )
             # THIS CODE ASSUMED WE ARE RUNNING ON EC2, for everything else
             # the boto3 session should be sufficient to retrieve region name
             resp = requests.put(
@@ -33,12 +36,14 @@ def get_region() -> str:
                 "http://169.254.169.254/latest/meta-data/placement/region",
                 headers={"X-aws-ec2-metadata-token": token},
             ).text
-            logger.info(f"region_name={region_name}, also setting the AWS_DEFAULT_REGION env var")
+            logger.info(
+                f"region_name={region_name}, also setting the AWS_DEFAULT_REGION env var"
+            )
             os.environ["AWS_DEFAULT_REGION"] = region_name
         logger.info(f"region_name={region_name}")
-    except Exception as e: 
+    except Exception as e:
         logger.error(f"Could not fetch the region: {e}")
-        region_name=None
+        region_name = None
     return region_name
 
 
@@ -69,28 +74,26 @@ def get_iam_role() -> str:
             else:
                 arn_string = caller.get("Arn")
         role_name = arn_string.split("/")[-1]
-    except Exception as e: 
+    except Exception as e:
         logger.error(f"Could not fetch the role name or arn_string: {e}")
-        arn_string=None
+        arn_string = None
 
     return arn_string
 
 
 def create_iam_instance_profile_arn():
 
-    iam_client = boto3.client('iam')
-    role_name: str = 'fmbench'
+    iam_client = boto3.client("iam")
+    role_name: str = "fmbench"
 
     instance_profile_arn: Optional[str] = None
     instance_profile_role_name: str = config_data["aws"].get(
         "iam_instance_profile_arn", "fmbench_orchestrator_role_new"
     )
 
-    try: 
+    try:
         policy = {
-                "Version": "2012-10-17",
-
-
+            "Version": "2012-10-17",
             "Statement": [
                 {
                     "Effect": "Allow",
@@ -163,9 +166,7 @@ def create_iam_instance_profile_arn():
         }
 
         policy_response = iam_client.create_policy(
-
-            PolicyName='CustomPolicy', PolicyDocument=json.dumps(policy)
-
+            PolicyName="CustomPolicy", PolicyDocument=json.dumps(policy)
         )
 
         # Create IAM role
@@ -227,46 +228,59 @@ def create_iam_instance_profile_arn():
             logger.error(f"Error creating the instance profile iam: {e}")
 
 
-def upload_and_run_script(instance_id: str, 
-                            private_key_path: str, 
-                            user_data_script: str, 
-                            region: str, 
-                            startup_script: str) -> bool:
+def upload_and_run_script(
+    instance_id: str,
+    private_key_path: str,
+    user_data_script: str,
+    region: str,
+    startup_script: str,
+) -> bool:
     """
     Runs the user data as a script in the case of which an instance is pre existing. This is because
     the user script of an instance can only be modified when it is stopped.
     """
-    ec2_client = boto3.client('ec2', region_name=region)
+    ec2_client = boto3.client("ec2", region_name=region)
     has_start_up_script_executed: bool = False
     try:
         # Get instance public IP
-        hostname, username, instance_name = _get_ec2_hostname_and_username(instance_id, region)
-
+        public_hostname, username, instance_name = _get_ec2_hostname_and_username(
+            instance_id, region, public_dns=True
+        )
+        logger.info(f"Uploading and running script on instance {instance_id}...")
+        logger.info(
+            f"hostname={public_hostname}, username={username}, instance_name={instance_name}"
+        )
         # Create SSH client
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        
+
         # Connect to the instance
-        ssh.connect(hostname=hostname, username=username, key_filename=private_key_path)
+        ssh.connect(
+            hostname=public_hostname, username=username, key_filename=private_key_path
+        )
 
         # Upload the script
         with ssh.open_sftp() as sftp:
-            with sftp.file('/tmp/startup_script.sh', 'w') as f:
+            with sftp.file("/tmp/startup_script.sh", "w") as f:
                 f.write(user_data_script)
 
         # Make the script executable and run it
-        stdin, stdout, stderr = ssh.exec_command('chmod +x /tmp/startup_script.sh && sudo /tmp/startup_script.sh')
-        
+        stdin, stdout, stderr = ssh.exec_command(
+            "chmod +x /tmp/startup_script.sh && nohup sudo /tmp/startup_script.sh &"
+        )
+
         # Print output
-        for line in stdout:
-            logger.info(line.strip('\n'))
-        for line in stderr:
-            logger.info(line.strip('\n'))
+        # for line in stdout:
+        #     logger.info(line.strip('\n'))
+        # for line in stderr:
+        #     logger.info(line.strip('\n'))
         ssh.close()
         logger.info(f"Script uploaded and executed on instance {instance_id}")
-        has_start_up_script_executed=True
+        has_start_up_script_executed = True
     except Exception as e:
-        logger.error(f"Error uploading and running script on instance {instance_id}: {e}")
+        logger.error(
+            f"Error uploading and running script on instance {instance_id}: {e}"
+        )
     return has_start_up_script_executed
 
 
@@ -303,9 +317,13 @@ def get_key_pair(region):
 
     # Generate the key pair name using the format: config_name-region
     config_name = config_data["key_pair_gen"]["key_pair_name"]
-    
+
     # Generate the key pair name using the format: config_name-region
-    key_pair_name = f"{config_name}-{region}" if config_data["run_steps"]["key_pair_generation"] else config_name
+    key_pair_name = (
+        f"{config_name}-{region}"
+        if config_data["run_steps"]["key_pair_generation"]
+        else config_name
+    )
     private_key_fname = os.path.join(key_pair_dir, f"{key_pair_name}.pem")
 
     # Check if key pair generation is enabled

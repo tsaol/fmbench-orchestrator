@@ -387,7 +387,11 @@ def _get_ec2_hostname_and_username(
             # instance name
             tags = response["Reservations"][0]["Instances"][0]["Tags"]
             logger.info(f"tags={tags}")
-            instance_name = [t["Value"] for t in tags if t["Key"] == "Name"][0]
+            instance_names = [t["Value"] for t in tags if t["Key"] == "Name"]
+            if not instance_names:
+                instance_name = "FMBench-" + instance.get('InstanceType') + "-" + instance_id
+            else:
+                instance_name = instance_names[0]
         # Determine the username based on the AMI ID
         username = _determine_username(ami_id, region)
     except Exception as e:
@@ -1006,3 +1010,4 @@ def _put_folder_to_instance(
         logger.error(f"Error uploading folder to {hostname} via SCP: {e}")
         folder_uploaded = False
     return folder_uploaded
+

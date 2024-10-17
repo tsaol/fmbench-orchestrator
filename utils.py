@@ -514,7 +514,6 @@ def check_and_retrieve_results_folder(instance: Dict, local_folder_base: str):
 
     Args:
         instance (dict): Dictionary containing instance details (hostname, username, instance_id).
-        key_file_path (str): The path to the PEM key file.
         local_folder_base (str): The local base path where the folders should be saved.
 
     Returns:
@@ -540,12 +539,6 @@ def check_and_retrieve_results_folder(instance: Dict, local_folder_base: str):
                 # Create a local folder path for this instance
                 local_folder = os.path.join(local_folder_base, instance_name)
                 logger.info(
-                    f"check_and_retrieve_results_folder, {instance_name}, going to download {folder} in {local_folder}"
-                )
-                if Path(local_folder).is_dir():
-                    shutil.rmtree(local_folder)
-                os.makedirs(local_folder)  # Create local directory
-                logger.info(
                     f"Retrieving folder '{folder}' from {instance_name} to '{local_folder}'..."
                 )
                 _get_folder_from_instance(
@@ -559,6 +552,51 @@ def check_and_retrieve_results_folder(instance: Dict, local_folder_base: str):
         logger.error(
             f"Error occured while attempting to check and retrieve results from the instances: {e}"
         )
+
+def get_fmbench_log(instance: Dict, local_folder_base: str, log_file_path: str):
+    """
+    Checks for 'fmbench.log' file on a single EC2 instance and retrieves them if found.
+
+    Args:
+        instance (dict): Dictionary containing instance details (hostname, username, instance_id, key_file_path).
+        local_folder_base (str): The local base path where the folders should be saved.
+        log_file_path (str): The remote path to the log file.
+
+    Returns:
+        None
+    """
+    hostname = instance["hostname"]
+    username = instance["username"]
+    key_file_path = instance["key_file_path"]
+    instance_name = instance["instance_name"]
+
+    # Define local folder to store the log file
+    local_folder = os.path.join(local_folder_base, instance_name)
+    local_log_file = os.path.join(local_folder, 'fmbench.log')
+
+    try:
+        # Clear out the local folder if it exists, then recreate it
+        if Path(local_folder).is_dir():
+            shutil.rmtree(local_folder)
+        os.makedirs(local_folder)
+
+        # Setup SSH and SFTP connection using Paramiko
+        key = paramiko.RSAKey.from_private_key_file(key_file_path)
+        ssh_client = paramiko.SSHClient()
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh_client.connect(hostname=hostname, username=username, pkey=key)
+
+        # Use SFTP to download the log file
+        sftp = ssh_client.open_sftp()
+        sftp.get(log_file_path, local_log_file)
+        logger.info(f"Downloaded '{log_file_path}' to '{local_log_file}'")
+
+        # Close connections
+        sftp.close()
+        ssh_client.close()
+
+    except Exception as e:
+        logger.error(f"Error occurred while retrieving the log file from {instance_name}: {e}")
 
 
 def generate_instance_details(instance_id_list, instance_data_map):

@@ -60,7 +60,7 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
         STARTUP_COMPLETE_FLAG_FPATH,
         CLOUD_INITLOG_PATH,
     )
-
+  
     if startup_complete:
         if instance["byo_dataset_fpath"]:
             await upload_byo_dataset(
@@ -109,12 +109,22 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
             instance["fmbench_complete_timeout"],
             SCRIPT_CHECK_INTERVAL_IN_SECONDS,
         )
+        
+        logger.info("Going to get fmbench.log from the instance now")
+        results_folder = os.path.join(
+            RESULTS_DIR, globals.config_data["general"]["name"]
+        )
+        # Get Log even if fmbench_completes or not
+        await asyncio.get_event_loop().run_in_executor(
+            executor,
+            get_fmbench_log,
+            instance,
+            results_folder,
+            FMBENCH_LOG_PATH,
+        )
 
         if fmbench_complete:
             logger.info("Fmbench Run successful, Getting the folders now")
-            results_folder = os.path.join(
-                RESULTS_DIR, globals.config_data["general"]["name"]
-            )
             await asyncio.get_event_loop().run_in_executor(
                 executor, check_and_retrieve_results_folder, instance, results_folder
             )

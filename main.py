@@ -120,7 +120,7 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
             get_fmbench_log,
             instance,
             results_folder,
-            FMBENCH_LOG_PATH,
+            FMBENCH_LOG_REMOTE_PATH,
         )
 
         if fmbench_complete:

@@ -569,7 +569,7 @@ def get_fmbench_log(instance: Dict, local_folder_base: str, log_file_path: str):
     username = instance["username"]
     key_file_path = instance["key_file_path"]
     instance_name = instance["instance_name"]
-
+    log_file_path = log_file_path.format(username=username)
     # Define local folder to store the log file
     local_folder = os.path.join(local_folder_base, instance_name)
     local_log_file = os.path.join(local_folder, 'fmbench.log')

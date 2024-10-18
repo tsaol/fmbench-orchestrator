@@ -27,7 +27,7 @@ EBS_VOLUME_TYPE: str = "gp3"
 CAPACITY_RESERVATION_PREFERENCE: str = "none"
 MIN_INSTANCE_COUNT: int = 1
 MAX_INSTANCE_COUNT: int = 1
-AMI_MAPPING_PARAM_NAME: str = 'ami_mapping'
+AMI_MAPPING_FNAME: str = 'ami_mapping.yml'
 
 # FMBench results file path
 FMBENCH_RESULTS_FOLDER_PATTERN: str = "$HOME/results-*"

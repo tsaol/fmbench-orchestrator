@@ -314,7 +314,7 @@ if __name__ == "__main__":
                         "fmbench_tokenizer_remote_dir"
                     ),
                     "fmbench_complete_timeout": instance["fmbench_complete_timeout"],
-                    "region": instance["region"],
+                    "region": instance.get("region", region),
                     "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
                     "byo_dataset_fpath": instance.get("byo_dataset_fpath"),
                 }

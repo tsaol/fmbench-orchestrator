@@ -31,7 +31,7 @@ MAX_WAIT_TIME_FOR_STARTUP_SCRIPT_IN_SECONDS: int = 1200
 SCRIPT_CHECK_INTERVAL_IN_SECONDS: int = 60
 FMBENCH_LOG_PATH: str = "~/fmbench.log"
 CLOUD_INITLOG_PATH: str = "/var/log/cloud-init-output.log"
-
+FMBENCH_LOG_REMOTE_PATH: str = "/home/{username}/fmbench.log"
 # misc directory paths
 RESULTS_DIR: str = "results"
 DOWNLOAD_DIR_FOR_CFG_FILES: str = "downloaded_configs"

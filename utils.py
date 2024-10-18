@@ -127,7 +127,6 @@ def load_yaml_file(file_path: str) -> Optional[Dict]:
         global_region = get_region()
         # Initial context with 'region'
         context = {'region': global_region}
-
         # First rendering to substitute 'region'
         template = Template(template_content)
         rendered_yaml = template.render(context)

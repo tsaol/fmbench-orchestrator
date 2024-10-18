@@ -96,7 +96,7 @@ instances:
   # The ami-id is fetched based on the region that this orchestrator is running in. If the region is provided
   # in this instance dictionary, that is the region that will be used to determine the ami id, depending on 
   # whether the instance_type above is a Neuron or GPU based instance
-  ami_id: {{ ami-id }}
+  ami_id: {{ ami_id }}
   device_name: /dev/sda1
   ebs_del_on_termination: True
   ebs_Iops: 16000

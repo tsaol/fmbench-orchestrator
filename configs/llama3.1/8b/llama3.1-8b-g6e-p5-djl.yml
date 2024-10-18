@@ -93,7 +93,7 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
-  fmbench_config: https://raw.githubusercontent.com/madhurprash/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/8b/config-llama3.1-8b-g6e.4xl-djl.yml
+  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/8b/config-llama3.1-8b-g6e.4xl-djl.yml
 
 - instance_type: g6e.12xlarge
   deploy: yes
@@ -110,7 +110,7 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
-  fmbench_config: https://raw.githubusercontent.com/madhurprash/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/8b/config-llama3.1-8b-g6e.12xl-djl-tp-4-mc-max-djl.yml
+  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/8b/config-llama3.1-8b-g6e.12xl-djl-tp-4-mc-max-djl.yml
 
 - instance_type: g6e.24xlarge
   deploy: yes
@@ -128,7 +128,7 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
-  fmbench_config: https://raw.githubusercontent.com/madhurprash/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/8b/config-llama3.1-8b-g6e.24xl-tp4-djl-tp-max.yml
+  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/8b/config-llama3.1-8b-g6e.24xl-tp4-djl-tp-max.yml
 
 
 - instance_type: g6e.48xlarge
@@ -147,7 +147,7 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
-  fmbench_config: https://raw.githubusercontent.com/madhurprash/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/8b/config-llama3.1-8b-g6e.48xl-tp-8-djl-tp-max.yml
+  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/8b/config-llama3.1-8b-g6e.48xl-tp-8-djl-tp-max.yml
 
 - instance_type: g6e.12xlarge
   deploy: yes
@@ -164,7 +164,7 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
-  fmbench_config: https://raw.githubusercontent.com/madhurprash/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/8b/config-llama3.1-8b-g6e.12xl-tp2-mc-max-djl.yml
+  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/8b/config-llama3.1-8b-g6e.12xl-tp2-mc-max-djl.yml
 
 - instance_type: g6e.24xlarge
   deploy: yes
@@ -182,7 +182,7 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
-  fmbench_config: https://raw.githubusercontent.com/madhurprash/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/8b/config-llama3.1-8b-g6e.24xl-tp2-mc-max-djl.yml
+  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/8b/config-llama3.1-8b-g6e.24xl-tp2-mc-max-djl.yml
 
 
 - instance_type: g6e.48xlarge
@@ -201,7 +201,7 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
-  fmbench_config: https://raw.githubusercontent.com/madhurprash/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/8b/config-llama3.1-8b-g6e.48xl-tp2-mc-max-djl.yml
+  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/8b/config-llama3.1-8b-g6e.48xl-tp2-mc-max-djl.yml
 
 - instance_type: g6e.48xlarge
   deploy: yes
@@ -219,7 +219,7 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
-  fmbench_config: https://raw.githubusercontent.com/madhurprash/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/8b/config-llama3.1-g6e.48xl-tp4-mc-max-djl.yml
+  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/8b/config-llama3.1-g6e.48xl-tp4-mc-max-djl.yml
 
 - instance_type: p5.48xlarge
   deploy: yes

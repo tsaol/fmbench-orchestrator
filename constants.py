@@ -27,6 +27,14 @@ EBS_VOLUME_TYPE: str = "gp3"
 CAPACITY_RESERVATION_PREFERENCE: str = "none"
 MIN_INSTANCE_COUNT: int = 1
 MAX_INSTANCE_COUNT: int = 1
+
+# all region specific AMI mapping information for gpu/neuron based instances
+# are given in this "ami_mapping.yml" file. This file currently contains information
+# on us-east-1, us-east-2, us-west-1, us-west-2 for gpu and neuron instances. To add
+# or change the ami mapping for other regions, modify this file. This model benchmarking
+# configuration file will utilize the region (determined by the region metadata) or if the
+# user provides it in the model config to get the AMI mapping and launch the specific
+# instance accordingly.
 AMI_MAPPING_FNAME: str = 'ami_mapping.yml'
 
 # FMBench results file path

@@ -6,6 +6,8 @@ aws:
   # This is the path to the hf token file that contains your custom
   # hf token
   hf_token_fpath: /tmp/hf_token.txt
+  # AWS region, this parameter is templatized, no need to change
+  region: {region}
   
 # steps to run the fmbench orchestration
 # test. If all steps are set to yes, the security

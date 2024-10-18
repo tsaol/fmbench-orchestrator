@@ -287,11 +287,8 @@ def get_key_pair(region):
     config_name = config_data["key_pair_gen"]["key_pair_name"]
 
     # Generate the key pair name using the format: config_name-region
-    key_pair_name = (
-        f"{config_name}-{region}"
-        if config_data["run_steps"]["key_pair_generation"]
-        else config_name
-    )
+    key_pair_name = config_name.format(region=region)
+    logger.info(f"Setting the key pair name as={key_pair_name}")
     private_key_fname = os.path.join(key_pair_dir, f"{key_pair_name}.pem")
 
     # Check if key pair generation is enabled

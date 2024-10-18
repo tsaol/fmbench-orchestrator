@@ -100,46 +100,43 @@ def load_yaml_file(file_path: str) -> Optional[Dict]:
                         substituted, or None if an error occurs.
     """
     try:
-        config_data: Optional[Dict] = None
-        if not os.path.isfile(file_path):
-            logger.error(f"Invalid configuration file path: {file_path}")
-            return
-        # Read the YAML file as a template so we can substitute the global region
         with open(file_path, 'r') as file:
             template = Template(file.read())
-
-        # Get the global region
+        # Get the global region where this orchestrator is running
         global_region = get_region()
-        logger.info(f"Orchestrator is running in region: {global_region}")
-        if global_region is None:
-            logger.error("Region could not be fetched.")
-            return
-        # Load AMI mapping
-        ami_mapping = _load_ami_mapping(os.path.join(os.path.dirname(file_path), 'ami_mapping.yml'))
-
-        # Render the template with global region
-        rendered_yaml = template.render(region=global_region)
+        context = {'region': global_region}
+        rendered_yaml = template.render(context)
         config_data = yaml.safe_load(rendered_yaml)
+        # Fetch the AMI mapping file
+        ami_mapping_fname: str = config_data.get('ami_mapping', AMI_MAPPING_FNAME)
+        configs_dir = os.path.dirname(os.path.dirname(os.path.dirname(file_path)))
+        logger.info(f"Loading the AMI mapping file from {os.path.join(configs_dir, ami_mapping_fname)}")
+        ami_mapping = _load_ami_mapping(os.path.join(configs_dir, ami_mapping_fname))
 
-        # Process instances and substitute AMI IDs
-        if 'instances' in config_data:
-            for instance in config_data['instances']:
-                instance_type = instance['instance_type']
-                instance_region = instance.get('region', global_region)
-                ami_type = AMI_TYPE.NEURON if IS_NEURON_INSTANCE(instance_type) else AMI_TYPE.GPU
-                
-                if instance_region in ami_mapping and ami_type in ami_mapping[instance_region]:
-                    ami_id = ami_mapping[instance_region][ami_type]
-                    # Render the template again with AMI ID
-                    instance_yaml = Template(yaml.dump(instance)).render(ami_id=ami_id)
-                    instance.update(yaml.safe_load(instance_yaml))
-                else:
-                    logger.error(f"No AMI ID found for {ami_type} in region: {instance_region}")
-                    return
-        logger.info(f"Configuration successfully loaded and processed: {file_path}")
+        for instance in config_data.get('instances'):
+            logger.info(f"current ami id: {instance['ami_id']}")
+            if 'ami_id' in instance and '{{' not in str(instance['ami_id']):
+                logger.info(f"AMI id already provided for {instance.get('instance_type')}. Moving to the next instance.")
+                continue
+            instance_type = instance.get('instance_type')
+            if not instance_type:
+                logger.error("Instance type not specified in the instance configuration")
+                return
+            instance_region = instance.get('region', global_region)
+            ami_type = AMI_TYPE.NEURON if IS_NEURON_INSTANCE(instance_type) else AMI_TYPE.GPU
+            if instance_region in ami_mapping and ami_type in ami_mapping[instance_region]:
+                ami_id = ami_mapping[instance_region][ami_type]
+                # Update the ami_id in the instance configuration
+                instance["ami_id"] = ami_id
+                logger.info(f"Assigned AMI ID: {ami_id} to instance: {instance_type}")
+            else:
+                logger.error(
+                    f"No AMI ID found for {ami_type} in region: {instance_region}. "
+                    "Please update the AMI mapping file.")
+                return
     except Exception as e:
-        logger.error(f"Error while loading or processing the YAML file: {e}")
-        config_data=None
+        logger.error(f"Error processing YAML file: {e}")
+        config_data = None
     return config_data
 
 

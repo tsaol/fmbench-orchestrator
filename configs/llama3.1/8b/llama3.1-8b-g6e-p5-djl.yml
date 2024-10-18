@@ -1,6 +1,6 @@
 # general configuration applicable to the entire app
 general:
-  name: llama3.1-8b-g6e-djl
+  name: llama3.1-8b-g6e-p5-djl
 
 aws:
   # This is the path to the hf token file that contains your custom
@@ -220,3 +220,21 @@ instances:
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
   fmbench_config: https://raw.githubusercontent.com/madhurprash/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/8b/config-llama3.1-g6e.48xl-tp4-mc-max-djl.yml
+
+- instance_type: p5.48xlarge
+  deploy: yes
+  region: us-east-2
+  # The ami-id is fetched based on the region that this orchestrator is running in. If the region is provided
+  # in this instance dictionary, that is the region that will be used to determine the ami id, depending on 
+  # whether the instance_type above is a Neuron or GPU based instance
+  ami_id: {{ ami_id }}
+  device_name: /dev/sda1
+  ebs_del_on_termination: True
+  ebs_Iops: 16000
+  ebs_VolumeSize: 250
+  ebs_VolumeType: gp3
+  startup_script: startup_scripts/ubuntu_startup.txt
+  post_startup_script: post_startup_scripts/fmbench.txt
+  # Timeout period in Seconds before a run is stopped
+  fmbench_complete_timeout: 2400
+  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/8b/config-ec2-llama3-1-8b-p5-tp-2-mc-max.yml

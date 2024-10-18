@@ -101,39 +101,41 @@ def load_yaml_file(file_path: str) -> Optional[Dict]:
     """
     try:
         with open(file_path, 'r') as file:
-            template = Template(file.read())
+            template_content = file.read()
         # Get the global region where this orchestrator is running
         global_region = get_region()
+        # Initial context with 'region'
         context = {'region': global_region}
+
+        # First rendering to substitute 'region'
+        template = Template(template_content)
         rendered_yaml = template.render(context)
         config_data = yaml.safe_load(rendered_yaml)
-        # Fetch the AMI mapping file
-        ami_mapping_fname: str = config_data.get('ami_mapping', AMI_MAPPING_FNAME)
-        configs_dir = os.path.dirname(os.path.dirname(os.path.dirname(file_path)))
-        logger.info(f"Loading the AMI mapping file from {os.path.join(configs_dir, ami_mapping_fname)}")
-        ami_mapping = _load_ami_mapping(os.path.join(configs_dir, ami_mapping_fname))
 
-        for instance in config_data.get('instances'):
-            logger.info(f"current ami id: {instance['ami_id']}")
-            if 'ami_id' in instance and '{{' not in str(instance['ami_id']):
+        # Fetch the AMI mapping file
+        ami_mapping_fname = config_data.get('ami_mapping', AMI_MAPPING_FNAME)
+        configs_dir = os.path.dirname(os.path.dirname(os.path.dirname(file_path)))
+        ami_mapping_path = os.path.join(configs_dir, ami_mapping_fname)
+        logger.info(f"Loading the AMI mapping file from {ami_mapping_path}")
+        ami_mapping = _load_ami_mapping(ami_mapping_path)
+
+        # Process each instance to compute 'ami_id'
+        instances = config_data.get('instances')
+        for instance in instances:
+            if instance.get('ami_id') is not None and '{{' not in str(instance.get('ami_id')):
                 logger.info(f"AMI id already provided for {instance.get('instance_type')}. Moving to the next instance.")
                 continue
             instance_type = instance.get('instance_type')
-            if not instance_type:
-                logger.error("Instance type not specified in the instance configuration")
-                return
             instance_region = instance.get('region', global_region)
             ami_type = AMI_TYPE.NEURON if IS_NEURON_INSTANCE(instance_type) else AMI_TYPE.GPU
-            if instance_region in ami_mapping and ami_type in ami_mapping[instance_region]:
-                ami_id = ami_mapping[instance_region][ami_type]
-                # Update the ami_id in the instance configuration
-                instance["ami_id"] = ami_id
-                logger.info(f"Assigned AMI ID: {ami_id} to instance: {instance_type}")
-            else:
+            ami_id = ami_mapping.get(instance_region).get(ami_type)
+            if ami_id is None:
                 logger.error(
                     f"No AMI ID found for {ami_type} in region: {instance_region}. "
-                    "Please update the AMI mapping file.")
+                    "Please update the AMI mapping file or provide it in the configuration file.")
                 return
+            instance['ami_id'] = ami_id
+            logger.info(f"Assigned AMI ID: {ami_id} to instance: {instance_type}")
     except Exception as e:
         logger.error(f"Error processing YAML file: {e}")
         config_data = None

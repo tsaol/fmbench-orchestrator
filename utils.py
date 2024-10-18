@@ -87,6 +87,27 @@ def _load_ami_mapping(file_path: str) -> Dict:
         config_data=None
     return config_data
 
+def _get_ami_id(instance_type: str, instance_region: str, ami_mapping: Dict) -> Optional[str]:
+    """
+    Retrieve the AMI ID for a given instance type and region.
+
+    Args:
+        instance_type (str): The type of the instance.
+        instance_region (str): The region where the instance is located.
+        ami_mapping (Dict): A mapping of regions to AMI IDs.
+
+    Returns:
+        Optional[str]: The AMI ID if found, otherwise None.
+    """
+    try:
+        ami_id: Optional[str] = None
+        ami_type = AMI_TYPE.NEURON if IS_NEURON_INSTANCE(instance_type) else AMI_TYPE.GPU
+        ami_id = ami_mapping.get(instance_region).get(ami_type)
+    except Exception as e:
+        logger.error(f"Error occurred while fetching the AMI id: {e}")
+        ami_id=None
+    return ami_id
+
 
 def load_yaml_file(file_path: str) -> Optional[Dict]:
     """
@@ -127,8 +148,7 @@ def load_yaml_file(file_path: str) -> Optional[Dict]:
                 continue
             instance_type = instance.get('instance_type')
             instance_region = instance.get('region', global_region)
-            ami_type = AMI_TYPE.NEURON if IS_NEURON_INSTANCE(instance_type) else AMI_TYPE.GPU
-            ami_id = ami_mapping.get(instance_region).get(ami_type)
+            ami_id = ami_id = _get_ami_id(instance_type, instance_region, ami_mapping)
             if ami_id is None:
                 logger.error(
                     f"No AMI ID found for {ami_type} in region: {instance_region}. "
@@ -1142,4 +1162,3 @@ def _put_folder_to_instance(
         logger.error(f"Error uploading folder to {hostname} via SCP: {e}")
         folder_uploaded = False
     return folder_uploaded
-

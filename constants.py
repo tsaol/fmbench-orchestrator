@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Optional, List, Dict
 
 # Define constants
@@ -5,6 +6,12 @@ remote_script_path: str = "/home/ubuntu/run_fmbench.sh"
 YAML_FILE_PATH: str = "config.yml"
 DEFAULT_EC2_USERNAME: str = "ec2-user"
 BYO_DATASET_FILE_PATH: str = "/tmp/fmbench-read/source_data/"
+AWS_CHIPS_PREFIX_LIST: List[str] = ["inf2", "trn1"]
+IS_NEURON_INSTANCE = lambda instance_type: any([instance_type.startswith(p) for p in AWS_CHIPS_PREFIX_LIST])
+
+class AMI_TYPE(str, Enum):
+    NEURON = 'neuron'
+    GPU = "gpu"
 
 # Define a dictionary for common AMIs and their corresponding usernames
 AMI_USERNAME_MAP: Dict = {
@@ -21,6 +28,15 @@ CAPACITY_RESERVATION_PREFERENCE: str = "none"
 MIN_INSTANCE_COUNT: int = 1
 MAX_INSTANCE_COUNT: int = 1
 
+# all region specific AMI mapping information for gpu/neuron based instances
+# are given in this "ami_mapping.yml" file. This file currently contains information
+# on us-east-1, us-east-2, us-west-1, us-west-2 for gpu and neuron instances. To add
+# or change the ami mapping for other regions, modify this file. This model benchmarking
+# configuration file will utilize the region (determined by the region metadata) or if the
+# user provides it in the model config to get the AMI mapping and launch the specific
+# instance accordingly.
+AMI_MAPPING_FNAME: str = 'ami_mapping.yml'
+
 # FMBench results file path
 FMBENCH_RESULTS_FOLDER_PATTERN: str = "$HOME/results-*"
 
@@ -31,7 +47,7 @@ MAX_WAIT_TIME_FOR_STARTUP_SCRIPT_IN_SECONDS: int = 1200
 SCRIPT_CHECK_INTERVAL_IN_SECONDS: int = 60
 FMBENCH_LOG_PATH: str = "~/fmbench.log"
 CLOUD_INITLOG_PATH: str = "/var/log/cloud-init-output.log"
-FMBENCH_LOG_REMOTE_PATH: str = "/home/{username}/fmbench.log"
+
 # misc directory paths
 RESULTS_DIR: str = "results"
 DOWNLOAD_DIR_FOR_CFG_FILES: str = "downloaded_configs"
@@ -41,4 +57,3 @@ AMI_NAME_MAP = {
     "neuron": "Deep Learning AMI Neuron (Ubuntu 22.04)",
     "cpu": "Amazon Linux 2 AMI (HVM) - Kernel 5.10, SSD Volume Type",
 }
-

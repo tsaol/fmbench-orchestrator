@@ -15,6 +15,7 @@ from utils import *
 from constants import *
 from pathlib import Path
 from scp import SCPClient
+from jinja2 import Template
 from collections import defaultdict
 from typing import Optional, List, Tuple
 from concurrent.futures import ThreadPoolExecutor
@@ -26,26 +27,138 @@ logger = logging.getLogger(__name__)
 executor = ThreadPoolExecutor()
 
 
-def load_yaml_file(file_path: str) -> Dict:
+def get_region() -> str:
     """
-    Load and parse a YAML file.
+    This function fetches the current region where this orchestrator is running using the 
+    EC2 region metadata API or the boto3 session if the region cannot be determined from
+    the API.
+    """
+    try:
+        session = boto3.session.Session()
+        region_name = session.region_name
+        if region_name is None:
+            logger.info(
+                f"boto3.session.Session().region_name is {region_name}, "
+                f"going to use an metadata api to determine region name"
+            )
+            # THIS CODE ASSUMED WE ARE RUNNING ON EC2, for everything else
+            # the boto3 session should be sufficient to retrieve region name
+            resp = requests.put(
+                "http://169.254.169.254/latest/api/token",
+                headers={"X-aws-ec2-metadata-token-ttl-seconds": "21600"},
+            )
+            token = resp.text
+            region_name = requests.get(
+                "http://169.254.169.254/latest/meta-data/placement/region",
+                headers={"X-aws-ec2-metadata-token": token},
+            ).text
+            logger.info(
+                f"region_name={region_name}, also setting the AWS_DEFAULT_REGION env var"
+            )
+            os.environ["AWS_DEFAULT_REGION"] = region_name
+        logger.info(f"region_name={region_name}")
+    except Exception as e:
+        logger.error(f"Could not fetch the region: {e}")
+        region_name = None
+    return region_name
+
+
+def _load_ami_mapping(file_path: str) -> Dict:
+    """
+    Load and parse the AMI mapping YAML file. This file contains information about the 
+    AMI id based on the instance type (GPU/Neuron based) and region.
+    Args:
+        file_path (str): The path to the AMI mapping YAML file.
+
+    Returns:
+        dict: The AMI mapping data.
+    """
+    config_data: Optional[Dict] = None
+    try:
+        if os.path.isfile(file_path):
+            with open(file_path, 'r') as file:
+                config_data = yaml.safe_load(file)
+                logger.info(f"AMI Mapping loaded: {json.dumps(config_data, indent=2)}")
+        else:
+            logger.error(f"AMI mapping file {file_path} does not exist.")
+            config_data=None
+    except Exception as e:
+        logger.error(f"Error loading AMI mapping file: {e}")
+        config_data=None
+    return config_data
+
+def _get_ami_id(instance_type: str, instance_region: str, ami_mapping: Dict) -> Optional[str]:
+    """
+    Retrieve the AMI ID for a given instance type and region.
+
+    Args:
+        instance_type (str): The type of the instance.
+        instance_region (str): The region where the instance is located.
+        ami_mapping (Dict): A mapping of regions to AMI IDs.
+
+    Returns:
+        Optional[str]: The AMI ID if found, otherwise None.
+    """
+    try:
+        ami_id: Optional[str] = None
+        ami_type = AMI_TYPE.NEURON if IS_NEURON_INSTANCE(instance_type) else AMI_TYPE.GPU
+        ami_id = ami_mapping.get(instance_region).get(ami_type)
+    except Exception as e:
+        logger.error(f"Error occurred while fetching the AMI id: {e}")
+        ami_id=None
+    return ami_id
+
+
+def load_yaml_file(file_path: str) -> Optional[Dict]:
+    """
+    Load and parse a YAML file using Jinja2 templating for region and AMI ID substitution.
 
     Args:
         file_path (str): The path to the YAML file to be read.
 
     Returns:
-        dict: Parsed content of the YAML file as a dictionary.
+        Optional[Dict]: Parsed content of the YAML file as a dictionary with region and AMI mapping information
+                        substituted, or None if an error occurs.
     """
     try:
-        config_file_data: Optional[Dict] = None
-        if os.path.isfile(file_path):
-            logger.info(f"{file_path} is a valid configuration file path.")
-            with open(file_path, "r") as file:
-                config_file_data = yaml.safe_load(file)
+        with open(file_path, 'r') as file:
+            template_content = file.read()
+        # Get the global region where this orchestrator is running
+        global_region = get_region()
+        # Initial context with 'region'
+        context = {'region': global_region}
+        # First rendering to substitute 'region'
+        template = Template(template_content)
+        rendered_yaml = template.render(context)
+        config_data = yaml.safe_load(rendered_yaml)
+
+        # Fetch the AMI mapping file
+        ami_mapping_fname = config_data.get('ami_mapping', AMI_MAPPING_FNAME)
+        configs_dir = os.path.dirname(os.path.dirname(os.path.dirname(file_path)))
+        ami_mapping_path = os.path.join(configs_dir, ami_mapping_fname)
+        logger.info(f"Loading the AMI mapping file from {ami_mapping_path}")
+        ami_mapping = _load_ami_mapping(ami_mapping_path)
+
+        # Process each instance to compute 'ami_id'
+        instances = config_data.get('instances')
+        for instance in instances:
+            if instance.get('ami_id') is not None and '{{' not in str(instance.get('ami_id')):
+                logger.info(f"AMI id already provided for {instance.get('instance_type')}. Moving to the next instance.")
+                continue
+            instance_type = instance.get('instance_type')
+            instance_region = instance.get('region', global_region)
+            ami_id = ami_id = _get_ami_id(instance_type, instance_region, ami_mapping)
+            if ami_id is None:
+                logger.error(
+                    f"No AMI ID found for {ami_type} in region: {instance_region}. "
+                    "Please update the AMI mapping file or provide it in the configuration file.")
+                return
+            instance['ami_id'] = ami_id
+            logger.info(f"Assigned AMI ID: {ami_id} to instance: {instance_type}")
     except Exception as e:
-        logger.error(f"Error while loading the YAML file: {e}")
-        config_file_data = None
-    return config_file_data
+        logger.error(f"Error processing YAML file: {e}")
+        config_data = None
+    return config_data
 
 
 def _get_security_group_id_by_name(region: str, group_name: str, vpc_id: int) -> str:
@@ -1048,4 +1161,3 @@ def _put_folder_to_instance(
         logger.error(f"Error uploading folder to {hostname} via SCP: {e}")
         folder_uploaded = False
     return folder_uploaded
-

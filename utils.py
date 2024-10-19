@@ -63,30 +63,6 @@ def get_region() -> str:
     return region_name
 
 
-def _load_ami_mapping(file_path: str) -> Dict:
-    """
-    Load and parse the AMI mapping YAML file. This file contains information about the 
-    AMI id based on the instance type (GPU/Neuron based) and region.
-    Args:
-        file_path (str): The path to the AMI mapping YAML file.
-
-    Returns:
-        dict: The AMI mapping data.
-    """
-    config_data: Optional[Dict] = None
-    try:
-        if os.path.isfile(file_path):
-            with open(file_path, 'r') as file:
-                config_data = yaml.safe_load(file)
-                logger.info(f"AMI Mapping loaded: {json.dumps(config_data, indent=2)}")
-        else:
-            logger.error(f"AMI mapping file {file_path} does not exist.")
-            config_data=None
-    except Exception as e:
-        logger.error(f"Error loading AMI mapping file: {e}")
-        config_data=None
-    return config_data
-
 def _get_ami_id(instance_type: str, instance_region: str, ami_mapping: Dict) -> Optional[str]:
     """
     Retrieve the AMI ID for a given instance type and region.
@@ -108,8 +84,29 @@ def _get_ami_id(instance_type: str, instance_region: str, ami_mapping: Dict) -> 
         ami_id=None
     return ami_id
 
+import re
 
-def load_yaml_file(file_path: str) -> Optional[Dict]:
+def _normalize_yaml_param_spacing(template_content: str, variable_name: str) -> str:
+    """
+    Replaces all possible spacing combinations of '{{ gpu_ami}}' with '{{gpu_ami}}'.
+    
+    Parameters:
+    - template_content (str): The content of the template with potential spacing around 'gpu_ami'.
+    - param_name (str): The name of the parameter to fix spacing
+    Returns:
+    - str: The template content with normalized '{{gpu_ami}}' placeholders.
+    """
+    
+    # Define the regex pattern to match '{{ gpu_ami}}' with any possible spacing
+    pattern = r"\{\{\s*" + re.escape(variable_name) + r"\s*\}\}"
+    
+    # Replace all occurrences of the pattern with '{{gpu_ami}}'
+    normalized_content = re.sub(pattern, f"{{{variable_name}}}", template_content)
+    
+    return normalized_content
+
+
+def load_yaml_file(config_file_path: str, ami_mapping_file_path: str) -> Optional[Dict]:
     """
     Load and parse a YAML file using Jinja2 templating for region and AMI ID substitution.
 
@@ -120,44 +117,74 @@ def load_yaml_file(file_path: str) -> Optional[Dict]:
         Optional[Dict]: Parsed content of the YAML file as a dictionary with region and AMI mapping information
                         substituted, or None if an error occurs.
     """
-    try:
-        with open(file_path, 'r') as file:
-            template_content = file.read()
-        # Get the global region where this orchestrator is running
-        global_region = get_region()
-        # Initial context with 'region'
-        context = {'region': global_region}
-        # First rendering to substitute 'region'
-        template = Template(template_content)
-        rendered_yaml = template.render(context)
-        config_data = yaml.safe_load(rendered_yaml)
+   
+    if Path(config_file_path).is_file() is False:
+        logger.error(f"{config_file_path} not found, cannot continue")
+        raise FileNotFoundError(f"file '{config_file_path}' does not exist.")
+    
+    if Path(ami_mapping_file_path).is_file() is False:
+        logger.error(f"{ami_mapping_file_path} not found, cannot continue")
+        raise FileNotFoundError(f"file '{ami_mapping_file_path}' does not exist.")
+    
+    template_content = Path(config_file_path).read_text()
+    # Normalize the spacing, so {{ gpu }} and {{ gpu}} etc all get converted
+    # to {{gpu}}
+    for param in ['gpu', 'cpu', 'neuron']:
+        template_content = _normalize_yaml_param_spacing(template_content, param)
 
-        # Fetch the AMI mapping file
-        ami_mapping_fname = config_data.get('ami_mapping', AMI_MAPPING_FNAME)
-        configs_dir = os.path.dirname(os.path.dirname(os.path.dirname(file_path)))
-        ami_mapping_path = os.path.join(configs_dir, ami_mapping_fname)
-        logger.info(f"Loading the AMI mapping file from {ami_mapping_path}")
-        ami_mapping = _load_ami_mapping(ami_mapping_path)
+    # Get the global region where this orchestrator is running
+    # Initial context with 'region'
+    global_region = get_region()
+    context = {'region': global_region}
+    # First rendering to substitute 'region'
+    template = Template(template_content)
+    rendered_yaml = template.render(context)
 
-        # Process each instance to compute 'ami_id'
-        instances = config_data.get('instances')
-        for instance in instances:
-            if instance.get('ami_id') is not None and '{{' not in str(instance.get('ami_id')):
-                logger.info(f"AMI id already provided for {instance.get('instance_type')}. Moving to the next instance.")
-                continue
-            instance_type = instance.get('instance_type')
-            instance_region = instance.get('region', global_region)
-            ami_id = ami_id = _get_ami_id(instance_type, instance_region, ami_mapping)
-            if ami_id is None:
-                logger.error(
-                    f"No AMI ID found for {ami_type} in region: {instance_region}. "
-                    "Please update the AMI mapping file or provide it in the configuration file.")
-                return
-            instance['ami_id'] = ami_id
-            logger.info(f"Assigned AMI ID: {ami_id} to instance: {instance_type}")
-    except Exception as e:
-        logger.error(f"Error processing YAML file: {e}")
-        config_data = None
+    # yaml to json
+    config_data = yaml.safe_load(rendered_yaml)
+
+    # Fetch the AMI mapping file
+    ami_mapping =  yaml.safe_load(Path(ami_mapping_file_path).read_text())
+
+    # at this time any instance of ami_id: ami-something would remain as is
+    # but any instance ami_id: gpu have been converted to ami_id: {gpu: None}
+    # so we will iterate through the instance to replace ami_id with region specific
+    # ami_id values from the ami_mapping we have. We have to do this because jinja2 does not
+    # support nested variables and all other options added unnecessary complexity
+    for i, instance in enumerate(config_data['instances']):
+        if instance.get('region') is None:
+            config_data['instances'][i]['region'] = global_region
+            region = global_region
+        else:
+            region = instance['region']
+        ami_id = instance['ami_id']
+
+        if isinstance(ami_id, dict):
+            # name of the first key, could be gpu, cpu, neuron or others in future
+            ami_key = next(iter(ami_id))
+            ami_id_from_config = None
+            if ami_mapping.get(region):
+                ami_id_from_config = ami_mapping[region].get(ami_key)
+                if ami_id_from_config is None:
+                    logger.error(f"instance {i+1}, instance_type={instance['instance_type']}, no ami found for {region} type {ami_key}")
+                    raise Exception(f"instance {i+1}, instance_type={instance['instance_type']}, no ami found for {region} type {ami_key}")
+            else:
+                logger.error(f"no info found for region {region} in {ami_mapping_file_path}, cannot continue")
+                raise Exception(f"instance {i+1}, instance_type={instance['instance_type']}, no info found in region {region} in {ami_mapping_file_path}, cannot continue")
+            logger.info(f"instance {i+1}, instance_type={instance['instance_type']}, ami_key={ami_key}, region={region}, ami_id_from_config={ami_id_from_config}")
+            # set the ami id
+            config_data['instances'][i]['ami_id'] = ami_id_from_config
+        elif isinstance(ami_id, str):
+            logger.info(f"instance {i+1}, instance_type={instance['instance_type']}, region={region}, ami_id={ami_id}")
+        else:
+            raise Exception(f"instance {i+1}, instance_type={instance['instance_type']}, "
+                            f"no info found for ami_id {ami_id}, region {region} in {ami_mapping_file_path}, cannot continue")
+
+        # see if we need to unfurl the fmbench config file url
+        fmbench_config_path = instance['fmbench_config']
+        if fmbench_config_path.startswith(FMBENCH_CFG_PREFIX) is True:
+            config_data['instances'][i]['fmbench_config'] = config_data['instances'][i]['fmbench_config'].replace(FMBENCH_CFG_PREFIX, FMBENCH_CFG_GH_PREFIX)
+        
     return config_data
 
 
@@ -483,6 +510,7 @@ def _get_ec2_hostname_and_username(
         tuple: A tuple containing the hostname (public or private DNS) and username.
     """
     try:
+        hostname, username, instance_name = None, None, None
         ec2_client = boto3.client("ec2", region_name=region)
         # Describe the instance
         response = ec2_client.describe_instances(InstanceIds=[instance_id])

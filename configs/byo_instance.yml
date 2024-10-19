@@ -7,7 +7,7 @@ aws:
   # hf token
   hf_token_fpath: /tmp/hf_token.txt
   # AWS region, this parameter is templatized, no need to change
-  region: {region}
+  region: {{region}}
   
 # steps to run the fmbench orchestration
 # test. If all steps are set to yes, the security
@@ -78,11 +78,11 @@ key_pair_gen:
 # Take the below as list of dict as there might be 2 instances with the same AMI
 
 instances:
-- instance_id: i-00faaa7de59acda27
+- instance_id: i-your-instance-id
   private_key_fname: key_pair/H1-kp.pem
-  region: us-east-1
+  region: {{region}}
   startup_script: startup_scripts/gpu_ubuntu_startup.txt
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
-  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3/8b/config-ec2-llama3-8b-g6e-2xlarge.yml
+  fmbench_config: fmbench:llama3/8b/config-ec2-llama3-8b-g6e-2xlarge.yml

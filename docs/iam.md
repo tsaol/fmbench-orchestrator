@@ -37,7 +37,8 @@ Here are the permissions and trust policies that the IAM role assigned to the Am
                     "arn:aws:ec2:*:*:key-pair/*",
                     "arn:aws:ec2:*:*:security-group/*",
                     "arn:aws:ec2:*:*:subnet/*",
-                    "arn:aws:ec2:*:*:image/*"
+                    "arn:aws:ec2:*:*:image/*",
+                    "arn:aws:ec2:*:*:capacity-reservation/*"
                 ]
             },
             {

@@ -46,14 +46,15 @@ FMBENCH_TEST_COMPLETE_FLAG_FPATH: str = "/tmp/fmbench_completed.flag"
 MAX_WAIT_TIME_FOR_STARTUP_SCRIPT_IN_SECONDS: int = 1200
 SCRIPT_CHECK_INTERVAL_IN_SECONDS: int = 60
 FMBENCH_LOG_PATH: str = "~/fmbench.log"
+FMBENCH_LOG_REMOTE_PATH: str = "/home/{username}/fmbench.log"
 CLOUD_INITLOG_PATH: str = "/var/log/cloud-init-output.log"
 
 # misc directory paths
 RESULTS_DIR: str = "results"
 DOWNLOAD_DIR_FOR_CFG_FILES: str = "downloaded_configs"
 
-AMI_NAME_MAP = {
-    "gpu": "Deep Learning OSS Nvidia Driver AMI GPU PyTorch 2.4 (Ubuntu 22.04)",
-    "neuron": "Deep Learning AMI Neuron (Ubuntu 22.04)",
-    "cpu": "Amazon Linux 2 AMI (HVM) - Kernel 5.10, SSD Volume Type",
-}
+# if the config file path starts with this then we know
+# we need to download it from fmbench github repo
+FMBENCH_CFG_PREFIX: str = "fmbench:"
+FMBENCH_CFG_GH_PREFIX: str = "https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/"
+

@@ -172,12 +172,19 @@ if __name__ == "__main__":
         required=False,
         default="configs/config.yml",
     )
+    parser.add_argument(
+        "--ami-mapping-file",
+        type=str,
+        help="Path to a config file containing the region->instance type->AMI apping",
+        required=False,
+        default="configs/ami_mapping.yml",
+    )
 
     args = parser.parse_args()
     logger.info(f"main, {args} = args")
 
-    globals.config_data = load_yaml_file(args.config_file)
-    logger.info(f"Loaded Config {globals.config_data}")
+    globals.config_data = load_yaml_file(args.config_file, args.ami_mapping_file)
+    logger.info(f"Loaded Config {json.dumps(globals.config_data, indent=2)}")
 
     hf_token_fpath = globals.config_data["aws"].get("hf_token_fpath")
     hf_token: Optional[str] = None

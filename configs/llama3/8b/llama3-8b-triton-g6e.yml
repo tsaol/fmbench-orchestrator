@@ -7,7 +7,7 @@ aws:
   # hf token
   hf_token_fpath: /tmp/hf_token.txt
   # AWS region, this parameter is templatized, no need to change
-  region: {region}
+  region: {{region}}
   
 # steps to run the fmbench orchestration
 # test. If all steps are set to yes, the security
@@ -43,7 +43,7 @@ key_pair_gen:
 
 #Instance follows the format below.
 #   instance_id: {instance_id_here} if Instance_id, then you need to bring your own private key
-#   private_key_fname: key_pair/fmbench_orchestrator_1-us-east-1
+#   private_key_fname: key_pair/fmbench_orchestrator_1-{{region}}
 #                   OR
 # - instance_type: {instance_name_here} 
 #   region: {region_here}
@@ -80,8 +80,8 @@ key_pair_gen:
 instances:
 - instance_type: g6e.2xlarge
   deploy: yes
-  region: us-east-1
-  ami_id: {{ ami_id }}
+  region: {{region}}
+  ami_id: {{ gpu }}
   device_name: /dev/sda1
   ebs_del_on_termination: True
   ebs_Iops: 16000
@@ -91,12 +91,12 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
-  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3/8b/config-llama3-8b-g6e.2xl-tp-1-mc-max-triton-ec2.yml
+  fmbench_config: fmbench:llama3/8b/config-llama3-8b-g6e.2xl-tp-1-mc-max-triton-ec2.yml
 
 - instance_type: g6e.4xlarge
   deploy: yes
-  region: us-east-1
-  ami_id: {{ ami_id }}
+  region: {{region}}
+  ami_id: {{ gpu }}
   device_name: /dev/sda1
   ebs_del_on_termination: True
   ebs_Iops: 16000
@@ -106,12 +106,12 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
-  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3/8b/config-llama3-8b-g6e.4xl-tp-1-mc-max-triton-ec2.yml
+  fmbench_config: fmbench:llama3/8b/config-llama3-8b-g6e.4xl-tp-1-mc-max-triton-ec2.yml
 
 - instance_type: g6e.12xlarge
   deploy: yes
-  region: us-east-1
-  ami_id: {{ ami_id }}
+  region: {{region}}
+  ami_id: {{ gpu }}
   device_name: /dev/sda1
   ebs_del_on_termination: True
   ebs_Iops: 16000
@@ -121,12 +121,12 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
-  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3/8b/config-llama3-8b-g6e.12xl-tp-2-mc-max-triton-ec2.yml
+  fmbench_config: fmbench:llama3/8b/config-llama3-8b-g6e.12xl-tp-2-mc-max-triton-ec2.yml
 
 - instance_type: g6e.24xlarge
   deploy: yes
-  region: us-east-1
-  ami_id: {{ ami_id }}
+  region: {{region}}
+  ami_id: {{ gpu }}
   device_name: /dev/sda1
   ebs_del_on_termination: True
   ebs_Iops: 16000
@@ -136,13 +136,13 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
-  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3/8b/config-llama3-8b-g6e.24xl-tp-2-mc-max-triton-ec2.yml
+  fmbench_config: fmbench:llama3/8b/config-llama3-8b-g6e.24xl-tp-2-mc-max-triton-ec2.yml
 
 
 - instance_type: g6e.48xlarge
   deploy: yes
-  region: us-east-1
-  ami_id: {{ ami_id }}
+  region: {{region}}
+  ami_id: {{ gpu }}
   device_name: /dev/sda1
   ebs_del_on_termination: True
   ebs_Iops: 16000
@@ -152,6 +152,6 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
-  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3/8b/config-llama3-8b-g6e.48xl-tp-2-mc-max-triton-ec2.yml
+  fmbench_config: fmbench:llama3/8b/config-llama3-8b-g6e.48xl-tp-2-mc-max-triton-ec2.yml
 
 

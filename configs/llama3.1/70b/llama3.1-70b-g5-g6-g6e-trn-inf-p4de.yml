@@ -7,7 +7,7 @@ aws:
   # hf token
   hf_token_fpath: /tmp/hf_token.txt
   # AWS region, this parameter is templatized, no need to change
-  region: {region}
+  region: {{region}}
   
 # steps to run the fmbench orchestration
 # test. If all steps are set to yes, the security
@@ -24,7 +24,7 @@ run_steps:
   deploy_ec2_instance: yes
   create_iam_role: no
   run_bash_script: yes
-  delete_ec2_instance: yes
+  delete_ec2_instance: no
 
 security_group:
   group_name: fmbench_orchestrator_sg
@@ -81,8 +81,8 @@ instances:
 # This is for g6e type instances
 - instance_type: g6e.24xlarge
   deploy: yes
-  region: us-west-2
-  ami_id: {{ ami_id }}
+  region: {{region}}
+  ami_id: {{ gpu }}
   device_name: /dev/sda1
   ebs_del_on_termination: True
   ebs_Iops: 16000
@@ -92,12 +92,12 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 6000
-  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/70b/config-llama3-1-70b-g6e.24xl-deploy-ec2.yml
+  fmbench_config: fmbench:llama3.1/70b/config-llama3-1-70b-g6e.24xl-deploy-ec2.yml
 
 - instance_type: g6e.48xlarge
   deploy: yes
-  region: us-west-2
-  ami_id: {{ ami_id }}
+  region: {{region}}
+  ami_id: {{ gpu }}
   device_name: /dev/sda1
   ebs_del_on_termination: True
   ebs_Iops: 16000
@@ -107,13 +107,13 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 6000
-  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/70b/config-llama3-1-70b-g6e.48xl-deploy-ec2.yml
+  fmbench_config: fmbench:llama3.1/70b/config-llama3-1-70b-g6e.48xl-deploy-ec2.yml
 
 # This is for the g6 instance. The only instance you can deploy a llama3.1 70b on a g6 is g6.48xl
 - instance_type: g6.48xlarge
   deploy: yes
-  region: us-west-2
-  ami_id: {{ ami_id }}
+  region: {{region}}
+  ami_id: {{ gpu }}
   device_name: /dev/sda1
   ebs_del_on_termination: True
   ebs_Iops: 16000
@@ -123,13 +123,13 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 6000
-  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/70b/config-llama3-1-70b-g6.48xl-deploy-ec2.yml
+  fmbench_config: fmbench:llama3.1/70b/config-llama3-1-70b-g6.48xl-deploy-ec2.yml
 
 # This is for the g5 instance. The only instance you can deploy a llama3.1 70b on a g5 is g5.48xl
 - instance_type: g5.48xlarge
   deploy: yes
   region: us-east-2
-  ami_id: {{ ami_id }}
+  ami_id: {{ gpu }}
   device_name: /dev/sda1
   ebs_del_on_termination: True
   ebs_Iops: 16000
@@ -139,13 +139,13 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 6000
-  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/70b/config-llama3-1-70b-g5.48xl-deploy-ec2.yml
+  fmbench_config: fmbench:llama3.1/70b/config-llama3-1-70b-g5.48xl-deploy-ec2.yml
 
 # This is for a capacity reservation type instance p4de.24xlarge
 - instance_type: p4de.24xlarge
-  deploy: yes 
+  deploy: yes
   region: us-west-2
-  ami_id: {{ ami_id }}
+  ami_id: {{ gpu }}
   device_name: /dev/sda1
   ebs_del_on_termination: True
   ebs_Iops: 16000
@@ -153,51 +153,19 @@ instances:
   ebs_VolumeType: gp3
   #Defaults to none, You can use either Reservation Id ARN or both
   CapacityReservationPreference: 
-  CapacityReservationId: # enter your CR id here
+  CapacityReservationId: cr-0aed3d7ec3ff92812
   CapacityReservationResourceGroupArn:
   startup_script: startup_scripts/ubuntu_startup.txt
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 6000
-  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/70b/config-llama3-1-70b-g5.48xl-deploy-ec2.yml
+  fmbench_config: fmbench:llama3.1/70b/config-ec2-llama3-1-70b-p4de.24xl-deploy-ec2-longbench.yml
 
 # This is for the trn1.32xlarge instance. This specific example is for triton + djl which gives the most optimal performance for llama3.1 70b on trn1.32xlarge
 - instance_type: trn1.32xlarge
   deploy: yes
-  region: us-west-2 
-  ami_id: {{ ami_id }}
-  device_name: /dev/sda1
-  ebs_del_on_termination: True
-  ebs_Iops: 16000
-  ebs_VolumeSize: 600 # additional storage required to load the model, docker image, etc
-  ebs_VolumeType: gp3
-  startup_script: startup_scripts/neuron_al2_startup_triton.txt
-  post_startup_script: post_startup_scripts/fmbench.txt
-  # Timeout period in Seconds before a run is stopped
-  fmbench_complete_timeout: 6000
-  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/70b/config-llama3-1-70b-trn1.32xl-deploy-ec2-triton.yml
-
-# This is for the inf2.48xlarge instance. This specific example is for triton + djl which gives the most optimal performance for llama3.1 70b on inf2.48xlarge
-- instance_type: inf2.48xlarge
-  deploy: yes
-  region: us-west-2
-  ami_id: {{ ami_id }}
-  device_name: /dev/sda1
-  ebs_del_on_termination: True
-  ebs_Iops: 16000
-  ebs_VolumeSize: 600 # additional storage required to load the model, docker image, etc
-  ebs_VolumeType: gp3
-  startup_script: startup_scripts/neuron_al2_startup_triton.txt
-  post_startup_script: post_startup_scripts/fmbench.txt
-  # Timeout period in Seconds before a run is stopped
-  fmbench_complete_timeout: 6000
-  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/70b/config-llama3-1-70b-inf2.48xl-triton-tp24.yml
-
-# This is for the p5.48xlarge instance
-- instance_type: p5.48xlarge
-  deploy: yes
-  region: us-west-2
-  ami_id: {{ ami_id }}
+  region: {{region}} 
+  ami_id: {{ neuron }}
   device_name: /dev/sda1
   ebs_del_on_termination: True
   ebs_Iops: 16000
@@ -207,4 +175,36 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 6000
-  fmbench_config: https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/70b/config-llama3-1-70b-p5-djl-lmi.yml
+  fmbench_config: fmbench:llama3.1/70b/config-llama3-1-70b-trn1.32xl-deploy-ec2-triton.yml
+
+# This is for the inf2.48xlarge instance. This specific example is for triton + djl which gives the most optimal performance for llama3.1 70b on inf2.48xlarge
+- instance_type: inf2.48xlarge
+  deploy: yes
+  region: {{region}}
+  ami_id: {{ neuron }}
+  device_name: /dev/sda1
+  ebs_del_on_termination: True
+  ebs_Iops: 16000
+  ebs_VolumeSize: 600 # additional storage required to load the model, docker image, etc
+  ebs_VolumeType: gp3
+  startup_script: startup_scripts/ubuntu_startup.txt
+  post_startup_script: post_startup_scripts/fmbench.txt
+  # Timeout period in Seconds before a run is stopped
+  fmbench_complete_timeout: 6000
+  fmbench_config: fmbench:llama3.1/70b/config-llama3-1-70b-inf2.48xl-triton-tp24.yml
+
+# This is for the p5.48xlarge instance
+- instance_type: p5.48xlarge
+  deploy: no
+  region: {{region}}
+  ami_id: {{ gpu }}
+  device_name: /dev/sda1
+  ebs_del_on_termination: True
+  ebs_Iops: 16000
+  ebs_VolumeSize: 200 # additional storage required to load the model, docker image, etc
+  ebs_VolumeType: gp3
+  startup_script: startup_scripts/ubuntu_startup.txt
+  post_startup_script: post_startup_scripts/fmbench.txt
+  # Timeout period in Seconds before a run is stopped
+  fmbench_complete_timeout: 6000
+  fmbench_config: fmbench:llama3.1/70b/config-llama3-1-70b-p5-djl-lmi.yml

@@ -71,11 +71,19 @@ The **FMBench Orchestrator** is a tool designed to automate the deployment and m
 
 ## Running FMBench Orchestrator:
 
-You can either use an existing config file included in this repo, such as [`configs/config.yml`](configs/config.yml) or create your own using the files provided in the [`configs`](configs) directory as a template.
+You can either use an existing config file included in this repo, such as [`configs/config.yml`](configs/config.yml) or create your own using the files provided in the [`configs`](configs) directory as a template. Make sure you are in the `fmbench-orchestrator-py311` conda environment.
 
 ```bash
 python main.py -f configs/config.yml
 ```
+
+Once the run is completed you can analyze the results i.e. compare and contrast the price performance of different EC2 instance types that were a part of the run by running an analytics script. The example below shows how to use the `analytcs.py` script to analyze results obtained from running the orchestrator with the [`llama3-8b-g6e-triton.yml`](configs/llama3/8b/llama3-8b-triton-g6e.yml) config file.
+
+```{.bashrc}
+python analytics/analytics.py --results-dir results/llama3-8b-g6e-triton --model-id llama3-8b --payload-file payload_en_3000-3840.jsonl --latency-threshold 2
+```
+
+Running the scripts above creates a `results` folder under `analytics` which contains summaries of the results and a heatmap that helps understand which instance type gives the best price performance at the desired scale (transactions/minute) while maintaining the inference latency below a desired threshold.
 
 # `FMBench` orchestrator configuration guide
 

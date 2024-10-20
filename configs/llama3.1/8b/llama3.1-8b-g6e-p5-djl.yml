@@ -94,7 +94,7 @@ instances:
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
   fmbench_config: 
-    - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.4xl-djl.yml
+  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.4xl-djl.yml
 
 - instance_type: g6e.12xlarge
   deploy: yes
@@ -112,7 +112,7 @@ instances:
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
   fmbench_config: 
-    - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.12xl-djl-tp-4-mc-max-djl.yml
+  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.12xl-djl-tp-4-mc-max-djl.yml
 
 - instance_type: g6e.24xlarge
   deploy: yes
@@ -131,7 +131,7 @@ instances:
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
   fmbench_config: 
-    - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.24xl-tp4-djl-tp-max.yml
+  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.24xl-tp4-djl-tp-max.yml
 
 
 - instance_type: g6e.48xlarge
@@ -151,7 +151,7 @@ instances:
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
   fmbench_config: 
-    - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.48xl-tp-8-djl-tp-max.yml
+  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.48xl-tp-8-djl-tp-max.yml
 
 - instance_type: g6e.12xlarge
   deploy: yes
@@ -169,7 +169,7 @@ instances:
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
   fmbench_config: 
-    - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.12xl-tp2-mc-max-djl.yml
+  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.12xl-tp2-mc-max-djl.yml
 
 - instance_type: g6e.24xlarge
   deploy: yes
@@ -188,7 +188,7 @@ instances:
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
   fmbench_config: 
-    - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.24xl-tp2-mc-max-djl.yml
+  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.24xl-tp2-mc-max-djl.yml
 
 
 - instance_type: g6e.48xlarge
@@ -208,7 +208,7 @@ instances:
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
   fmbench_config: 
-    - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.48xl-tp2-mc-max-djl.yml
+  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.48xl-tp2-mc-max-djl.yml
 
 - instance_type: g6e.48xlarge
   deploy: yes
@@ -227,7 +227,7 @@ instances:
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
   fmbench_config: 
-    - fmbench:llama3.1/8b/config-llama3.1-g6e.48xl-tp4-mc-max-djl.yml
+  - fmbench:llama3.1/8b/config-llama3.1-g6e.48xl-tp4-mc-max-djl.yml
 
 - instance_type: p5.48xlarge
   deploy: yes
@@ -246,4 +246,4 @@ instances:
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
   fmbench_config: 
-    - fmbench:llama3.1/8b/config-ec2-llama3-1-8b-p5-tp-2-mc-max.yml
+  - fmbench:llama3.1/8b/config-ec2-llama3-1-8b-p5-tp-2-mc-max.yml

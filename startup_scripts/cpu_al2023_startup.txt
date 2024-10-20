@@ -1,0 +1,56 @@
+#!/bin/bash
+cd /home/ec2-user
+
+# Update and install Docker and other dependencies as root
+sudo yum update -y
+sudo yum install docker git -y
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# Switch to ec2-user and run the following commands
+sudo -u ec2-user -i bash << 'EOF'
+# Download and install Miniconda
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /home/ec2-user/Miniconda3-latest-Linux-x86_64.sh
+bash /home/ec2-user/Miniconda3-latest-Linux-x86_64.sh -b -p /home/ec2-user/miniconda3
+rm /home/ec2-user/Miniconda3-latest-Linux-x86_64.sh
+
+# Initialize conda for bash shell
+/home/ec2-user/miniconda3/bin/conda init
+
+# Create a new conda environment
+/home/ec2-user/miniconda3/bin/conda create --name fmbench_python311 -y python=3.11 ipykernel
+# Activate the environment and install fmbench
+source /home/ec2-user/miniconda3/bin/activate fmbench_python311
+pip install -U fmbench
+
+# Add ec2-user to the docker group and reload group memberships
+sudo usermod -a -G docker $USER
+newgrp docker
+
+# Clone the vLLM project repository from GitHub
+git clone https://github.com/vllm-project/vllm.git
+
+# Change the directory to the cloned vLLM project
+cd vllm
+
+# Build a Docker image using the provided Dockerfile for CPU, with a shared memory size of 4GB
+sudo docker build -f Dockerfile.cpu -t vllm-cpu-env --shm-size=4g .
+
+DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
+mkdir -p $DOCKER_CONFIG/cli-plugins
+sudo curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o $DOCKER_CONFIG/cli-plugins/docker-compose
+sudo chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+docker compose version
+
+# Download content from S3 using the provided script
+curl -s https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/main/copy_s3_content.sh | sh -s -- /tmp
+echo "__HF_TOKEN__" > /tmp/fmbench-read/scripts/hf_token.txt
+
+
+# Add the conda environment activation and directory navigation to .bashrc
+echo 'source /home/ec2-user/miniconda3/bin/activate fmbench_python311' >> /home/ec2-user/.bashrc
+
+
+source /home/ec2-user/.bashrc
+touch /tmp/startup_complete.flag
+EOF

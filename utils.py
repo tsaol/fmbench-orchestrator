@@ -911,6 +911,11 @@ def upload_and_execute_script_invoke_shell(
             with ssh_client.invoke_shell() as shell:
                 time.sleep(1)  # Give the shell some time to initialize
 
+                logger.info("Going to check if FMBench complete Flag exists in this instance, if it does, remove it")
+                # Check if fmbench flag exists, if it does, remove it:
+                shell.send(f"[ -f /tmp/fmbench_completed.flag ] && rm /tmp/fmbench_completed.flag")
+
+                time.sleep(1)
                 shell.send(f"chmod +x {remote_script_path}\n")
                 time.sleep(1)  # Wait for the command to complete
 
@@ -1011,9 +1016,9 @@ async def upload_byo_dataset(
 
 
 # Asynchronous function to handle the configuration file
-async def handle_config_file_async(instance):
+async def handle_config_file_async(instance, config_file):
     """Handles downloading and uploading of the config file based on the config type (URL or local path)."""
-    config_path = instance["config_file"]
+    config_path = config_file
     local_paths: List = []
     # Check if the config path is a URL
     if urllib.parse.urlparse(config_path).scheme in ("http", "https"):

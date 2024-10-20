@@ -39,7 +39,7 @@ key_pair_gen:
   #Need to change this name to something better?
   # This assumes that if key_pair_generation is false, you have the key pair stored in the root.
   # If so, change the file name to your KP name and the script will pick it up.
-  key_pair_name: fmbench_orchestrator_key_pair-{region}
+  key_pair_name: fmbench_orchestrator_key_pair-{{region}}
 
 #Instance follows the format below.
 #   instance_id: {instance_id_here} if Instance_id, then you need to bring your own private key
@@ -114,45 +114,6 @@ instances:
   fmbench_config: 
   - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.12xl-djl-tp-4-mc-max-djl.yml
 
-- instance_type: g6e.24xlarge
-  deploy: yes
-  # The ami-id is fetched based on the region that this orchestrator is running in. If the region is provided
-  # in this instance dictionary, that is the region that will be used to determine the ami id, depending on 
-  # whether the instance_type above is a Neuron or GPU based instance
-  region: {{region}}
-  ami_id: {{ gpu }}
-  device_name: /dev/sda1
-  ebs_del_on_termination: True
-  ebs_Iops: 16000
-  ebs_VolumeSize: 250
-  ebs_VolumeType: gp3
-  startup_script: startup_scripts/ubuntu_startup.txt
-  post_startup_script: post_startup_scripts/fmbench.txt
-  # Timeout period in Seconds before a run is stopped
-  fmbench_complete_timeout: 2400
-  fmbench_config: 
-  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.24xl-tp4-djl-tp-max.yml
-
-
-- instance_type: g6e.48xlarge
-  deploy: yes
-  region: {{region}}
-  # The ami-id is fetched based on the region that this orchestrator is running in. If the region is provided
-  # in this instance dictionary, that is the region that will be used to determine the ami id, depending on 
-  # whether the instance_type above is a Neuron or GPU based instance
-  ami_id: {{ gpu }}
-  device_name: /dev/sda1
-  ebs_del_on_termination: True
-  ebs_Iops: 16000
-  ebs_VolumeSize: 250
-  ebs_VolumeType: gp3
-  startup_script: startup_scripts/ubuntu_startup.txt
-  post_startup_script: post_startup_scripts/fmbench.txt
-  # Timeout period in Seconds before a run is stopped
-  fmbench_complete_timeout: 2400
-  fmbench_config: 
-  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.48xl-tp-8-djl-tp-max.yml
-
 - instance_type: g6e.12xlarge
   deploy: yes
   # The ami-id is fetched based on the region that this orchestrator is running in. If the region is provided
@@ -170,6 +131,7 @@ instances:
   fmbench_complete_timeout: 2400
   fmbench_config: 
   - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.12xl-tp2-mc-max-djl.yml
+  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.24xl-tp4-djl-tp-max.yml
 
 - instance_type: g6e.24xlarge
   deploy: yes
@@ -209,28 +171,11 @@ instances:
   fmbench_complete_timeout: 2400
   fmbench_config: 
   - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.48xl-tp2-mc-max-djl.yml
-
-- instance_type: g6e.48xlarge
-  deploy: yes
-  region: {{region}}
-  # The ami-id is fetched based on the region that this orchestrator is running in. If the region is provided
-  # in this instance dictionary, that is the region that will be used to determine the ami id, depending on 
-  # whether the instance_type above is a Neuron or GPU based instance
-  ami_id: {{ gpu }}
-  device_name: /dev/sda1
-  ebs_del_on_termination: True
-  ebs_Iops: 16000
-  ebs_VolumeSize: 250
-  ebs_VolumeType: gp3
-  startup_script: startup_scripts/ubuntu_startup.txt
-  post_startup_script: post_startup_scripts/fmbench.txt
-  # Timeout period in Seconds before a run is stopped
-  fmbench_complete_timeout: 2400
-  fmbench_config: 
   - fmbench:llama3.1/8b/config-llama3.1-g6e.48xl-tp4-mc-max-djl.yml
+  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.48xl-tp-8-djl-tp-max.yml
 
 - instance_type: p5.48xlarge
-  deploy: yes
+  deploy: no
   region: {{region}}
   # The ami-id is fetched based on the region that this orchestrator is running in. If the region is provided
   # in this instance dictionary, that is the region that will be used to determine the ami id, depending on 

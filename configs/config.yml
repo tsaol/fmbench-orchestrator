@@ -91,8 +91,8 @@ instances:
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
   fmbench_config: 
-    fmbench:llama3/8b/config-ec2-llama3-8b-g6e-2xlarge.yml
-    fmbench:llama3/8b/config-ec2-llama3-8b-g6e-2xlarge.yml
+    - fmbench:llama3/8b/config-ec2-llama3-8b-g6e-2xlarge.yml
+    - fmbench:llama3/8b/config-ec2-llama3-8b-g6e-2xlarge.yml
 
 # - instance_type: inf2.48xlarge
 #   region: {{region}}

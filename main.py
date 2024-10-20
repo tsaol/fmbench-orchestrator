@@ -83,7 +83,8 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
         num_configs: int = len(instance["config_file"])
         for cfg_idx, config_file in enumerate(instance["config_file"]):
             cfg_idx += 1
-            logger.info(f"going to run config {cfg_idx} of {num_configs} for instance {instance["instance_name"]}")
+            instance_name = instance["instance_name"]
+            logger.info(f"going to run config {cfg_idx} of {num_configs} for instance {instance_name}")
             # Handle configuration file (download/upload) and get the remote path
             remote_config_path = await handle_config_file_async(instance, config_file)
             # Format the script with the remote config file path

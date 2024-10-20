@@ -181,10 +181,13 @@ def load_yaml_file(config_file_path: str, ami_mapping_file_path: str) -> Optiona
                             f"no info found for ami_id {ami_id}, region {region} in {ami_mapping_file_path}, cannot continue")
 
         # see if we need to unfurl the fmbench config file url
-        fmbench_config_path = instance['fmbench_config']
-        if fmbench_config_path.startswith(FMBENCH_CFG_PREFIX) is True:
-            config_data['instances'][i]['fmbench_config'] = config_data['instances'][i]['fmbench_config'].replace(FMBENCH_CFG_PREFIX, FMBENCH_CFG_GH_PREFIX)
-        
+        fmbench_config_paths = instance['fmbench_config']
+        if isinstance(fmbench_config_paths, list):
+            for j in range(len(fmbench_config_paths)):
+                if fmbench_config_paths[j].startswith(FMBENCH_CFG_PREFIX):
+                    fmbench_config_paths[j] = fmbench_config_paths[j].replace(FMBENCH_CFG_PREFIX, FMBENCH_CFG_GH_PREFIX)
+            config_data['instances'][i]['fmbench_config'] = fmbench_config_paths
+
     return config_data
 
 
@@ -913,9 +916,10 @@ def upload_and_execute_script_invoke_shell(
 
                 logger.info("Going to check if FMBench complete Flag exists in this instance, if it does, remove it")
                 # Check if fmbench flag exists, if it does, remove it:
-                shell.send(f"[ -f /tmp/fmbench_completed.flag ] && rm /tmp/fmbench_completed.flag")
-
+                shell.send("if [ -f /tmp/fmbench_completed.flag ]; then rm /tmp/fmbench_completed.flag; fi\n")
+                
                 time.sleep(1)
+
                 shell.send(f"chmod +x {remote_script_path}\n")
                 time.sleep(1)  # Wait for the command to complete
 

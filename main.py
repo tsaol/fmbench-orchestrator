@@ -62,24 +62,7 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
     )
   
     if startup_complete:
-        if instance["byo_dataset_fpath"]:
-            await upload_byo_dataset(
-                instance["hostname"],
-                instance["username"],
-                instance["key_file_path"],
-                instance["byo_dataset_fpath"],
-            )
         
-        if instance["fmbench_llm_config_fpath"]:
-                logger.info("Going to use custom tokenizer and config")
-                await upload_config_and_tokenizer(
-                    instance["hostname"],
-                    instance["username"],
-                    instance["key_file_path"],
-                    instance["fmbench_llm_config_fpath"],
-                    instance["fmbench_llm_tokenizer_fpath"],
-                    instance["fmbench_tokenizer_remote_dir"],
-                )
         num_configs: int = len(instance["config_file"])
         for cfg_idx, config_file in enumerate(instance["config_file"]):
             cfg_idx += 1
@@ -316,19 +299,10 @@ if __name__ == "__main__":
                 instance_data_map[instance_id] = {
                     "fmbench_config": instance["fmbench_config"],
                     "post_startup_script": instance["post_startup_script"],
-                    "fmbench_llm_tokenizer_fpath": instance.get(
-                        "fmbench_llm_tokenizer_fpath"
-                    ),
-                    "fmbench_llm_config_fpath": instance.get(
-                        "fmbench_llm_config_fpath"
-                    ),
-                    "fmbench_tokenizer_remote_dir": instance.get(
-                        "fmbench_tokenizer_remote_dir"
-                    ),
                     "fmbench_complete_timeout": instance["fmbench_complete_timeout"],
                     "region": instance.get("region", region),
                     "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
-                    "byo_dataset_fpath": instance.get("byo_dataset_fpath"),
+                    "upload_files": instance.get("upload_files"),
                 }
             else:
                 instance_id = instance["instance_id"]
@@ -357,21 +331,12 @@ if __name__ == "__main__":
                     instance_data_map[instance_id] = {
                         "fmbench_config": instance["fmbench_config"],
                         "post_startup_script": instance["post_startup_script"],
-                        "fmbench_llm_tokenizer_fpath": instance.get(
-                            "fmbench_llm_tokenizer_fpath"
-                        ),
-                        "fmbench_llm_config_fpath": instance.get(
-                            "fmbench_llm_config_fpath"
-                        ),
-                        "fmbench_tokenizer_remote_dir": instance.get(
-                            "fmbench_tokenizer_remote_dir"
-                        ),
                         "fmbench_complete_timeout": instance[
                             "fmbench_complete_timeout"
                         ],
                         "region": instance.get("region", region),
                         "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
-                        "byo_dataset_fpath": instance.get("byo_dataset_fpath"),
+                        "upload_files": instance.get("upload_files"),
                     }
 
                 logger.info(f"done creating instance {idx} of {num_instances}")

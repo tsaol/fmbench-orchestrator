@@ -957,96 +957,65 @@ async def download_config_async(url, download_dir=DOWNLOAD_DIR_FOR_CFG_FILES):
     return local_path
 
 
-# Asynchronous function to upload a file to the EC2 instance
 async def upload_file_to_instance_async(
-    hostname, username, key_file_path, local_paths, remote_path
+    hostname, username, key_file_path, file_paths
 ):
     """Asynchronously uploads multiple files to the EC2 instance."""
-
+    
     def upload_files():
-        try:
-            # Initialize the SSH client
-            ssh_client = paramiko.SSHClient()
-            ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        # Initialize the SSH client
+        ssh_client = paramiko.SSHClient()
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-            # Load the private key
-            private_key = paramiko.RSAKey.from_private_key_file(key_file_path)
+        # Load the private key
+        private_key = paramiko.RSAKey.from_private_key_file(key_file_path)
 
-            # Connect to the instance
-            ssh_client.connect(hostname, username=username, pkey=private_key)
-            logger.info(f"Connected to {hostname} as {username}")
+        # Connect to the instance
+        ssh_client.connect(hostname, username=username, pkey=private_key)
+        logger.info(f"Connected to {hostname} as {username}")
 
-            # Upload the files
-            with SCPClient(ssh_client.get_transport()) as scp:
-                for local_path in local_paths:
-                    scp.put(local_path, remote_path)
-                    logger.info(f"Uploaded {local_path} to {hostname}:{remote_path}")
+        # Upload the files
+        with SCPClient(ssh_client.get_transport()) as scp:
+            for file_path in file_paths:
+                local_path = file_path['local']
+                remote_path = file_path['remote']
+                scp.put(local_path, remote_path)
+                logger.info(f"Uploaded {local_path} to {hostname}:{remote_path}")
 
-            # Close the SSH connection
-            ssh_client.close()
-        except Exception as e:
-            logger.info(f"Error uploading files to {hostname}: {e}")
+        # Close the SSH connection
+        ssh_client.close()
 
-    # Run the blocking upload operation in a separate thread
-    await asyncio.get_event_loop().run_in_executor(None, upload_files)
-
-
-async def upload_config_and_tokenizer(
-    hostname, username, key_file_path, config_path, tokenizer_path, remote_path
-):
-    # List of files to upload
-    local_paths = [config_path, tokenizer_path]
-
-    # Call the asynchronous file upload function
-    await upload_file_to_instance_async(
-        hostname, username, key_file_path, local_paths, remote_path
-    )
-
-
-async def upload_byo_dataset(
-    hostname,
-    username,
-    key_file_path,
-    byo_dataset_path,
-    byo_remote_path=BYO_DATASET_FILE_PATH,
-):
-    # List of files to upload
-    local_paths = [byo_dataset_path]
-
-    # Call the asynchronous file upload function
-    await upload_file_to_instance_async(
-        hostname, username, key_file_path, local_paths, byo_remote_path
-    )
-
+    # Run the blocking operation in a separate thread
+    await asyncio.to_thread(upload_files)
 
 # Asynchronous function to handle the configuration file
 async def handle_config_file_async(instance, config_file):
     """Handles downloading and uploading of the config file based on the config type (URL or local path)."""
+    
     config_path = config_file
-    local_paths: List = []
+    file_paths = []
+    
     # Check if the config path is a URL
     if urllib.parse.urlparse(config_path).scheme in ("http", "https"):
         logger.info(f"Config is a URL. Downloading from {config_path}...")
         local_config_path = await download_config_async(config_path)
-        local_paths.append(local_config_path)
     else:
         # It's a local file path, use it directly
         local_config_path = config_path
-        local_paths.append(local_config_path)
 
     # Define the remote path for the configuration file on the EC2 instance
-    remote_config_path = (
-        f"/home/{instance['username']}/{os.path.basename(local_config_path)}"
-    )
+    remote_config_path = f"/home/{instance['username']}/{os.path.basename(local_config_path)}"
     logger.info(f"remote_config_path is: {remote_config_path}...")
+
+    # Append the local and remote paths to the list of files to upload
+    file_paths.append({'local': local_config_path, 'remote': remote_config_path})
 
     # Upload the configuration file to the EC2 instance
     await upload_file_to_instance_async(
         instance["hostname"],
         instance["username"],
         instance["key_file_path"],
-        local_paths,
-        remote_config_path,
+        file_paths  # Now passing the list of dictionaries with local and remote paths
     )
 
     return remote_config_path

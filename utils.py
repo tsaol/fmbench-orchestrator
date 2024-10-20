@@ -899,12 +899,15 @@ def upload_and_execute_script_invoke_shell(
             private_key = paramiko.RSAKey.from_private_key_file(key_file_path)
             ssh_client.connect(hostname, username=username, pkey=private_key)
             logger.info(f"Connected to {hostname} as {username}")
+            remote_script_path = remote_script_path.format(username=username)
+            try:
+                with ssh_client.open_sftp() as sftp:
+                    with sftp.file(remote_script_path, "w") as remote_file:
+                        remote_file.write(script_content)
+                    logger.info(f"Script successfully uploaded to {remote_script_path}")
+            except Exception as e:
+                logger.error(f"Failed to upload script to {remote_script_path}: {e}")
 
-            with ssh_client.open_sftp() as sftp:
-                with sftp.open(remote_script_path, "w") as remote_file:
-                    remote_file.write(script_content)
-                sftp.close()
-            logger.info(f"Script uploaded to {remote_script_path}")
 
             with ssh_client.invoke_shell() as shell:
                 time.sleep(1)  # Give the shell some time to initialize

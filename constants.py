@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Optional, List, Dict
 
 # Define constants
-remote_script_path: str = "/home/ubuntu/run_fmbench.sh"
+remote_script_path: str = "/home/{username}/run_fmbench.sh"
 YAML_FILE_PATH: str = "config.yml"
 DEFAULT_EC2_USERNAME: str = "ec2-user"
 BYO_DATASET_FILE_PATH: str = "/tmp/fmbench-read/source_data/"

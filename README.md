@@ -71,27 +71,28 @@ The **FMBench Orchestrator** is a tool designed to automate the deployment and m
 
 ## Running FMBench Orchestrator:
 
-You can either use an existing config file included in this repo, such as [`configs/config.yml`](configs/config.yml) or create your own using the files provided in the [`configs`](configs) director as a template.
+You can either use an existing config file included in this repo, such as [`configs/config.yml`](configs/config.yml) or create your own using the files provided in the [`configs`](configs) directory as a template.
 
 ```bash
 python main.py -f configs/config.yml
 ```
 
-# FMBench orchestrator configuration guide
+# `FMBench` orchestrator configuration guide
 
 ## Overview
-This configuration file is used to manage the deployment and orchestration of multiple EC2 instances for running FMBENCH benchmarks. The file defines various parameters, including AWS settings, run steps, security group settings, key pair management, and instance-specific configurations. This guide explains the purpose of each section and provides details on how to customize the file according to your requirements.
+This configuration file is used to manage the deployment and orchestration of multiple EC2 instances for running `FMBench` benchmarks. The file defines various parameters, including AWS settings, run steps, security group settings, key pair management, and instance-specific configurations. This guide explains the purpose of each section and provides details on how to customize the file according to your requirements.
 
 ## Configuration Sections
 
 ### AWS Settings
+
 This section contains the basic settings required to interact with AWS services.
 
-- `region`: Specifies the AWS region where the EC2 instances will be launched. Ensure this is set to the region where you want to deploy your resources (e.g., `us-east-1`).
-- `iam_instance_profile_arn`: The Amazon Resource Name (ARN) of the IAM instance profile that will be attached to the EC2 instances. This profile should have the necessary permissions for the orchestrator's operations.
-- `hf_token_fpath`: Your Hugging Face token for accessing specific resources or APIs. Replace `{hf_token_fp_here}` with your actual Hugging Face token filepath.
+- `region`: Unless you want to specify a region explicitly, this is always set to `{{region}}` which gets replaced with the current region of the EC2 VM on which the orchestrator is being run. The `region` parameter can also be specified with each instance in the `instances` section, if specified in the `instances` section then that value would override the value in this section. This allows for launching instances in a region different from the region in which the orchestrator is running.
+- `hf_token_fpath`: Your Hugging Face token for accessing specific resources or APIs. Always set to `/tmp/hf_token.txt` unless you want to store the token in a different path.
 
 ### Run Steps
+
 Defines the various steps in the orchestration process. Set each step to `yes` or `no` based on whether you want that step to be executed.
 
 - `security_group_creation`: Whether to create a new security group for the EC2 instances. Set to `yes` to create a new security group or `no` to use an existing one.
@@ -101,64 +102,70 @@ Defines the various steps in the orchestration process. Set each step to `yes` o
 - `delete_ec2_instance`: Whether to terminate the EC2 instances after completing the benchmarks.
 
 ### Security Group
-This section configures the security group settings for the EC2 instances.
+
+This section configures the security group settings for the EC2 instances. You would typically not need to change anything in this section from what is specified in the [default config file](configs/config.yml).
 
 - `group_name`: Name of the security group to be created or used. If a group with this name already exists, it will be used.
 - `description`: A brief description of the security group, such as "MultiDeploy EC2 Security Group."
 - `vpc_id`: The VPC ID where the security group will be created. Leave this blank to use the default VPC.
 
 ### Key Pair Management
-Manages the SSH key pair used for accessing the EC2 instances.
+
+Manages the SSH key pair used for accessing the EC2 instances. You would typically not need to change anything in this section from what is specified in the [default config file](configs/config.yml).
 
 - `key_pair_name`: Name of the key pair to be created or used. If `key_pair_generation` is set to `no`, ensure this matches the name of an existing key pair.
 - `key_pair_fpath`: The file path where the key pair file (`.pem`) will be stored locally. Update this path if you have an existing key pair.
 
 ### Instances
+
 Defines the EC2 instances to be launched for running the benchmarks. This section can contain multiple instance configurations.
 
 - `instance_type`: The type of EC2 instance to be launched (e.g., `g5.2xlarge`). Choose based on your resource requirements.
 - `deploy`: (_Optional_, default: `yes`) set to `yes` if you want to run benchmarking on this instance, `no` otherwise (comes in handy if you want to skip a particular instance from the run but do not want to remove it from the config file).
-- `ami_id`: The Amazon Machine Image (AMI) ID to use for the instance. Different AMIs can be specified for different instance types.
+- `ami_id`: Set to one of `{{gpu}}`, `{{cpu}}`, or `{{neuron}}` depending upon instance type. The orchestrator code replaces it with the actual ami id based on the region and whether it is a `gpu`, `cpu` or `neuron` instance.
 - `startup_script`: Path to the startup script that will be executed when the instance is launched. This script should be stored in the `startup_scripts` directory.
 - `post_startup_script`: Path to a script that will be executed after the initial startup script. Use this for any additional configuration or benchmark execution commands.
-- `fmbench_config`: URL or file path to the FMBENCH configuration file that will be used by the orchestrator.
+- `fmbench_config`: URL or file path to the `FMBench` configuration file that will be used by the orchestrator. If specifying a config file from the `FMBench` GitHub repo you can simply say (for example) `fmbench:llama3.1/70b/config-ec2-llama3-1-70b-p4de.24xl-deploy-ec2-longbench.yml` which will be translated into `https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/llama3.1/70b/config-ec2-llama3-1-70b-p4de.24xl-deploy-ec2-longbench.yml` by the orchestrator code.
+
+- `upload_files`: this is a list of `local` and `remote` entries where any file on the orchestrator machine can be uploaded to a remote path into the instance. This can be used for uploading a custom prompt, a custom tokenizer, a custom pricing file etc. In the example below we are uploading a custom dataset and a custom prompt template from the local (orchestrator) machine to the remote machine.
+    ```
+    upload_files:
+    - local: byo_dataset/synthetic_data_large_prompts.jsonl
+      remote: /tmp/fmbench-read/source_data
+    - local: byo_dataset/prompt_template_llama3_summarization.txt
+      remote: /tmp/fmbench-read/prompt_template/prompt_template_llama3_summarization.txt
+    ```
+
 
 ### Example Instance Configuration
-The following is an example configuration for deploying a `g5.2xlarge` and `g5.12xlarge` instance with specific AMI (Ubuntu Deep Learning OSS) and startup scripts:
 
-**Note:** This example uses html link for one, and local file path for the other.
+The following is an example configuration for deploying a `g6e.2xlarge` instance with GPU AMI (Ubuntu Deep Learning OSS) and startup scripts:
 
 ```yaml
 instances:
-- instance_type: {instance_name_here}
-  region: {region_here}
-  ami_id: {ami_id_here}
+- instance_type: g6e.2xlarge
+  region: {{region}}
+  ami_id: {{gpu}}
   device_name: /dev/sda1
-  ebs_del_on_termination: True | False
+  ebs_del_on_termination: True
   ebs_Iops: 16000
-  ebs_VolumeSize: {Volume_Size_Here}
-  ebs_VolumeType: {Volume_type_Here}
-  #Defaults to none, You can use either Reservation Id ARN or both
-  CapacityReservationPreference: open | none
-  CapacityReservationId: {The ID of the Capacity Reservation in which to run the instance.}
-  CapacityReservationResourceGroupArn: {The ARN of the Capacity Reservation resource group in which to run the instance.}
-  startup_script: startup_scripts/gpu_ubuntu_startup.txt
+  ebs_VolumeSize: 250
+  ebs_VolumeType: gp3
+  startup_script: startup_scripts/ubuntu_startup.txt
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
-  fmbench_complete_timeout: 1200
-  fmbench_config: {fmbench_config_here}
-
+  fmbench_complete_timeout: 2400
+  fmbench_config: 
+  - fmbench:llama3/8b/config-ec2-llama3-8b-g6e-2xlarge.yml
+  upload_files:
+   - local: byo_dataset/custom.jsonl
+     remote: /tmp
+   - local: analytics/pricing.yml
+     remote: /tmp
 ```
 
-## Customization
-1. **AWS Settings**: Ensure that the `region` and `iam_instance_profile_arn` are set according to your AWS account and region.
-2. **Run Steps**: Toggle the steps based on your requirements. If you have an existing key pair or security group, set the respective steps to `no`.
-3. **Security Group**: Update the `vpc_id` if you have a specific VPC. Otherwise, if left blank the default VPC will be used.
-4. **Key Pair Management**: If you choose not to generate a new key pair, ensure the existing key pair is specified and stored in the specified path and registered with aws.
-5. **Instances**: Modify the instance configurations as per your benchmarking requirements. Ensure the AMI ID and instance type are available in the chosen region.
-
-
 ## Workflow
+
 1. **Initialization**: Reads the configuration file and initializes the necessary AWS resources.
 2. **Instance Creation**: Launches the specified number of EC2 instances with the provided configuration.
 3. **FMBENCH Execution**: Runs the FMBENCH benchmark script on each instance.

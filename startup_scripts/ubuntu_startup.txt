@@ -79,8 +79,6 @@ cd tensorrtllm_backend
 # Install git-lfs if needed
 sudo apt --fix-broken install -y
 sudo apt-get update -y && sudo apt-get install git-lfs -y --no-install-recommends
-#sudo DEBIAN_FRONTEND=noninteractive apt-get update
-#sudo DEBIAN_FRONTEND=noninteractive apt-get install -y git-lfs --no-install-recommends
 git lfs install
 git submodule update --init --recursive
 

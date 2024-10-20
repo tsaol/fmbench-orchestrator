@@ -92,7 +92,8 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 6000
-  fmbench_config: fmbench:llama3.1/70b/config-llama3-1-70b-g6e.24xl-deploy-ec2.yml
+  fmbench_config: 
+    - fmbench:llama3.1/70b/config-llama3-1-70b-g6e.24xl-deploy-ec2.yml
 
 - instance_type: g6e.48xlarge
   deploy: yes
@@ -107,7 +108,8 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 6000
-  fmbench_config: fmbench:llama3.1/70b/config-llama3-1-70b-g6e.48xl-deploy-ec2.yml
+  fmbench_config: 
+    - fmbench:llama3.1/70b/config-llama3-1-70b-g6e.48xl-deploy-ec2.yml
 
 # This is for the g6 instance. The only instance you can deploy a llama3.1 70b on a g6 is g6.48xl
 - instance_type: g6.48xlarge
@@ -123,7 +125,8 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 6000
-  fmbench_config: fmbench:llama3.1/70b/config-llama3-1-70b-g6.48xl-deploy-ec2.yml
+  fmbench_config: 
+    - fmbench:llama3.1/70b/config-llama3-1-70b-g6.48xl-deploy-ec2.yml
 
 # This is for the g5 instance. The only instance you can deploy a llama3.1 70b on a g5 is g5.48xl
 - instance_type: g5.48xlarge
@@ -139,7 +142,8 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 6000
-  fmbench_config: fmbench:llama3.1/70b/config-llama3-1-70b-g5.48xl-deploy-ec2.yml
+  fmbench_config: 
+    - fmbench:llama3.1/70b/config-llama3-1-70b-g5.48xl-deploy-ec2.yml
 
 # This is for a capacity reservation type instance p4de.24xlarge
 - instance_type: p4de.24xlarge
@@ -159,7 +163,8 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 6000
-  fmbench_config: fmbench:llama3.1/70b/config-ec2-llama3-1-70b-p4de.24xl-deploy-ec2-longbench.yml
+  fmbench_config: 
+    - fmbench:llama3.1/70b/config-ec2-llama3-1-70b-p4de.24xl-deploy-ec2-longbench.yml
 
 # This is for the trn1.32xlarge instance. This specific example is for triton + djl which gives the most optimal performance for llama3.1 70b on trn1.32xlarge
 - instance_type: trn1.32xlarge
@@ -175,7 +180,8 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 6000
-  fmbench_config: fmbench:llama3.1/70b/config-llama3-1-70b-trn1.32xl-deploy-ec2-triton.yml
+  fmbench_config: 
+    - fmbench:llama3.1/70b/config-llama3-1-70b-trn1.32xl-deploy-ec2-triton.yml
 
 # This is for the inf2.48xlarge instance. This specific example is for triton + djl which gives the most optimal performance for llama3.1 70b on inf2.48xlarge
 - instance_type: inf2.48xlarge
@@ -191,7 +197,8 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 6000
-  fmbench_config: fmbench:llama3.1/70b/config-llama3-1-70b-inf2.48xl-triton-tp24.yml
+  fmbench_config: 
+    - fmbench:llama3.1/70b/config-llama3-1-70b-inf2.48xl-triton-tp24.yml
 
 # This is for the p5.48xlarge instance
 - instance_type: p5.48xlarge
@@ -207,4 +214,5 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 6000
-  fmbench_config: fmbench:llama3.1/70b/config-llama3-1-70b-p5-djl-lmi.yml
+  fmbench_config: 
+    - fmbench:llama3.1/70b/config-llama3-1-70b-p5-djl-lmi.yml

@@ -62,7 +62,13 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
     )
   
     if startup_complete:
-        
+        if instance['upload_files']:
+            await upload_file_to_instance_async(
+            instance["hostname"],
+                instance["username"],
+                instance["key_file_path"],
+                file_paths=instance['upload_files']
+            )
         num_configs: int = len(instance["config_file"])
         for cfg_idx, config_file in enumerate(instance["config_file"]):
             cfg_idx += 1

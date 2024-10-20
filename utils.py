@@ -789,13 +789,11 @@ def generate_instance_details(instance_id_list, instance_data_map):
         # Extract all the necessary configuration values from the config entry
         fmbench_config = config_entry["fmbench_config"]
         post_startup_script = config_entry["post_startup_script"]
-        fmbench_llm_tokenizer_fpath = config_entry.get("fmbench_llm_tokenizer_fpath")
-        fmbench_llm_config_fpath = config_entry.get("fmbench_llm_config_fpath")
-        fmbench_tokenizer_remote_dir = config_entry.get("fmbench_tokenizer_remote_dir")
-        byo_dataset_fpath = config_entry.get("byo_dataset_fpath")
+        upload_files = config_entry.get("upload_files")
         fmbench_complete_timeout = config_entry["fmbench_complete_timeout"]
         region = config_entry["region"]
         PRIVATE_KEY_FNAME = config_entry["PRIVATE_KEY_FNAME"]
+
 
         # Get the public hostname and username for each instance
         public_hostname, username, instance_name = _get_ec2_hostname_and_username(
@@ -817,10 +815,7 @@ def generate_instance_details(instance_id_list, instance_data_map):
                     ),
                     "config_file": fmbench_config,
                     "post_startup_script": post_startup_script,
-                    "fmbench_llm_tokenizer_fpath": fmbench_llm_tokenizer_fpath,
-                    "fmbench_llm_config_fpath": fmbench_llm_config_fpath,
-                    "fmbench_tokenizer_remote_dir": fmbench_tokenizer_remote_dir,
-                    "byo_dataset_fpath": byo_dataset_fpath,
+                    "upload_files": upload_files,
                     "fmbench_complete_timeout": fmbench_complete_timeout,
                     "region": config_entry.get("region", "us-east-1"),
                 }

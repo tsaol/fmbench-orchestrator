@@ -4,7 +4,7 @@
 
 ## Overview
 
-The **FMBench Orchestrator** is a tool designed to automate the deployment and management of FMBENCH on multiple EC2 instances in the AWS cloud. This orchestrator automates the creation of Security Groups, Key Pairs, EC2 instances, runs FMBENCH for a specific config, retrieves the results, and shuts down the instances after completion. It simplifies the benchmarking process and ensures a streamlined and scalable workflow.
+The **FMBench Orchestrator** is a tool designed to automate the deployment and management of `FMBench` on multiple Amazon EC2 instances in AWS. The multiple instances can be of different instance types (so you could run `g6e`, `p4de` and a `trn1` instances via the same config file), in different AWS regions and also test multiple `FMBench` config files. This orchestrator automates the creation of Security Groups, Key Pairs, EC2 instances, runs `FMBench` for a specific config, retrieves the results, and shuts down the instances after completion. Thus it **simplifies the benchmarking process (no more manual instance creation and cleanup, downloading results folder) and ensures a streamlined and scalable workflow**.
 
 ## Table of Contents
 1. [Prerequisites](#prerequisites)

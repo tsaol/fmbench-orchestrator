@@ -181,10 +181,13 @@ def load_yaml_file(config_file_path: str, ami_mapping_file_path: str) -> Optiona
                             f"no info found for ami_id {ami_id}, region {region} in {ami_mapping_file_path}, cannot continue")
 
         # see if we need to unfurl the fmbench config file url
-        fmbench_config_path = instance['fmbench_config']
-        if fmbench_config_path.startswith(FMBENCH_CFG_PREFIX) is True:
-            config_data['instances'][i]['fmbench_config'] = config_data['instances'][i]['fmbench_config'].replace(FMBENCH_CFG_PREFIX, FMBENCH_CFG_GH_PREFIX)
-        
+        fmbench_config_paths = instance['fmbench_config']
+        if isinstance(fmbench_config_paths, list):
+            for j in range(len(fmbench_config_paths)):
+                if fmbench_config_paths[j].startswith(FMBENCH_CFG_PREFIX):
+                    fmbench_config_paths[j] = fmbench_config_paths[j].replace(FMBENCH_CFG_PREFIX, FMBENCH_CFG_GH_PREFIX)
+            config_data['instances'][i]['fmbench_config'] = fmbench_config_paths
+
     return config_data
 
 
@@ -786,13 +789,11 @@ def generate_instance_details(instance_id_list, instance_data_map):
         # Extract all the necessary configuration values from the config entry
         fmbench_config = config_entry["fmbench_config"]
         post_startup_script = config_entry["post_startup_script"]
-        fmbench_llm_tokenizer_fpath = config_entry.get("fmbench_llm_tokenizer_fpath")
-        fmbench_llm_config_fpath = config_entry.get("fmbench_llm_config_fpath")
-        fmbench_tokenizer_remote_dir = config_entry.get("fmbench_tokenizer_remote_dir")
-        byo_dataset_fpath = config_entry.get("byo_dataset_fpath")
+        upload_files = config_entry.get("upload_files")
         fmbench_complete_timeout = config_entry["fmbench_complete_timeout"]
         region = config_entry["region"]
         PRIVATE_KEY_FNAME = config_entry["PRIVATE_KEY_FNAME"]
+
 
         # Get the public hostname and username for each instance
         public_hostname, username, instance_name = _get_ec2_hostname_and_username(
@@ -814,10 +815,7 @@ def generate_instance_details(instance_id_list, instance_data_map):
                     ),
                     "config_file": fmbench_config,
                     "post_startup_script": post_startup_script,
-                    "fmbench_llm_tokenizer_fpath": fmbench_llm_tokenizer_fpath,
-                    "fmbench_llm_config_fpath": fmbench_llm_config_fpath,
-                    "fmbench_tokenizer_remote_dir": fmbench_tokenizer_remote_dir,
-                    "byo_dataset_fpath": byo_dataset_fpath,
+                    "upload_files": upload_files,
                     "fmbench_complete_timeout": fmbench_complete_timeout,
                     "region": config_entry.get("region", "us-east-1"),
                 }
@@ -911,6 +909,12 @@ def upload_and_execute_script_invoke_shell(
             with ssh_client.invoke_shell() as shell:
                 time.sleep(1)  # Give the shell some time to initialize
 
+                logger.info("Going to check if FMBench complete Flag exists in this instance, if it does, remove it")
+                # Check if fmbench flag exists, if it does, remove it:
+                shell.send("if [ -f /tmp/fmbench_completed.flag ]; then rm /tmp/fmbench_completed.flag; fi\n")
+                
+                time.sleep(1)
+
                 shell.send(f"chmod +x {remote_script_path}\n")
                 time.sleep(1)  # Wait for the command to complete
 
@@ -948,96 +952,65 @@ async def download_config_async(url, download_dir=DOWNLOAD_DIR_FOR_CFG_FILES):
     return local_path
 
 
-# Asynchronous function to upload a file to the EC2 instance
 async def upload_file_to_instance_async(
-    hostname, username, key_file_path, local_paths, remote_path
+    hostname, username, key_file_path, file_paths
 ):
     """Asynchronously uploads multiple files to the EC2 instance."""
-
+    
     def upload_files():
-        try:
-            # Initialize the SSH client
-            ssh_client = paramiko.SSHClient()
-            ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        # Initialize the SSH client
+        ssh_client = paramiko.SSHClient()
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-            # Load the private key
-            private_key = paramiko.RSAKey.from_private_key_file(key_file_path)
+        # Load the private key
+        private_key = paramiko.RSAKey.from_private_key_file(key_file_path)
 
-            # Connect to the instance
-            ssh_client.connect(hostname, username=username, pkey=private_key)
-            logger.info(f"Connected to {hostname} as {username}")
+        # Connect to the instance
+        ssh_client.connect(hostname, username=username, pkey=private_key)
+        logger.info(f"Connected to {hostname} as {username}")
 
-            # Upload the files
-            with SCPClient(ssh_client.get_transport()) as scp:
-                for local_path in local_paths:
-                    scp.put(local_path, remote_path)
-                    logger.info(f"Uploaded {local_path} to {hostname}:{remote_path}")
+        # Upload the files
+        with SCPClient(ssh_client.get_transport()) as scp:
+            for file_path in file_paths:
+                local_path = file_path['local']
+                remote_path = file_path['remote']
+                scp.put(local_path, remote_path)
+                logger.info(f"Uploaded {local_path} to {hostname}:{remote_path}")
 
-            # Close the SSH connection
-            ssh_client.close()
-        except Exception as e:
-            logger.info(f"Error uploading files to {hostname}: {e}")
+        # Close the SSH connection
+        ssh_client.close()
 
-    # Run the blocking upload operation in a separate thread
-    await asyncio.get_event_loop().run_in_executor(None, upload_files)
-
-
-async def upload_config_and_tokenizer(
-    hostname, username, key_file_path, config_path, tokenizer_path, remote_path
-):
-    # List of files to upload
-    local_paths = [config_path, tokenizer_path]
-
-    # Call the asynchronous file upload function
-    await upload_file_to_instance_async(
-        hostname, username, key_file_path, local_paths, remote_path
-    )
-
-
-async def upload_byo_dataset(
-    hostname,
-    username,
-    key_file_path,
-    byo_dataset_path,
-    byo_remote_path=BYO_DATASET_FILE_PATH,
-):
-    # List of files to upload
-    local_paths = [byo_dataset_path]
-
-    # Call the asynchronous file upload function
-    await upload_file_to_instance_async(
-        hostname, username, key_file_path, local_paths, byo_remote_path
-    )
-
+    # Run the blocking operation in a separate thread
+    await asyncio.to_thread(upload_files)
 
 # Asynchronous function to handle the configuration file
-async def handle_config_file_async(instance):
+async def handle_config_file_async(instance, config_file):
     """Handles downloading and uploading of the config file based on the config type (URL or local path)."""
-    config_path = instance["config_file"]
-    local_paths: List = []
+    
+    config_path = config_file
+    file_paths = []
+    
     # Check if the config path is a URL
     if urllib.parse.urlparse(config_path).scheme in ("http", "https"):
         logger.info(f"Config is a URL. Downloading from {config_path}...")
         local_config_path = await download_config_async(config_path)
-        local_paths.append(local_config_path)
     else:
         # It's a local file path, use it directly
         local_config_path = config_path
-        local_paths.append(local_config_path)
 
     # Define the remote path for the configuration file on the EC2 instance
-    remote_config_path = (
-        f"/home/{instance['username']}/{os.path.basename(local_config_path)}"
-    )
+    remote_config_path = f"/home/{instance['username']}/{os.path.basename(local_config_path)}"
     logger.info(f"remote_config_path is: {remote_config_path}...")
+
+    # Append the local and remote paths to the list of files to upload
+    file_paths.append({'local': local_config_path, 'remote': remote_config_path})
 
     # Upload the configuration file to the EC2 instance
     await upload_file_to_instance_async(
         instance["hostname"],
         instance["username"],
         instance["key_file_path"],
-        local_paths,
-        remote_config_path,
+        file_paths  # Now passing the list of dictionaries with local and remote paths
     )
 
     return remote_config_path

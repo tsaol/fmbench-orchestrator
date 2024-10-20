@@ -91,7 +91,8 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
-  fmbench_config: fmbench:llama3/8b/config-llama3-8b-g6e.2xl-tp-1-mc-max-triton-ec2.yml
+  fmbench_config: 
+    - fmbench:llama3/8b/config-llama3-8b-g6e.2xl-tp-1-mc-max-triton-ec2.yml
 
 - instance_type: g6e.4xlarge
   deploy: yes
@@ -106,7 +107,8 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
-  fmbench_config: fmbench:llama3/8b/config-llama3-8b-g6e.4xl-tp-1-mc-max-triton-ec2.yml
+  fmbench_config: 
+    - fmbench:llama3/8b/config-llama3-8b-g6e.4xl-tp-1-mc-max-triton-ec2.yml
 
 - instance_type: g6e.12xlarge
   deploy: yes
@@ -121,7 +123,8 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
-  fmbench_config: fmbench:llama3/8b/config-llama3-8b-g6e.12xl-tp-2-mc-max-triton-ec2.yml
+  fmbench_config: 
+    - fmbench:llama3/8b/config-llama3-8b-g6e.12xl-tp-2-mc-max-triton-ec2.yml
 
 - instance_type: g6e.24xlarge
   deploy: yes
@@ -136,7 +139,8 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
-  fmbench_config: fmbench:llama3/8b/config-llama3-8b-g6e.24xl-tp-2-mc-max-triton-ec2.yml
+  fmbench_config: 
+    - fmbench:llama3/8b/config-llama3-8b-g6e.24xl-tp-2-mc-max-triton-ec2.yml
 
 
 - instance_type: g6e.48xlarge
@@ -152,6 +156,7 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
-  fmbench_config: fmbench:llama3/8b/config-llama3-8b-g6e.48xl-tp-2-mc-max-triton-ec2.yml
+  fmbench_config: 
+    - fmbench:llama3/8b/config-llama3-8b-g6e.48xl-tp-2-mc-max-triton-ec2.yml
 
 

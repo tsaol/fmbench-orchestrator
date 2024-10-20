@@ -62,75 +62,69 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
     )
   
     if startup_complete:
-        if instance["byo_dataset_fpath"]:
-            await upload_byo_dataset(
-                instance["hostname"],
-                instance["username"],
-                instance["key_file_path"],
-                instance["byo_dataset_fpath"],
-            )
-        # Handle configuration file (download/upload) and get the remote path
-        remote_config_path = await handle_config_file_async(instance)
-        # Format the script with the remote config file path
-        # Change this later to be a better implementation, right now it is bad.
-        formatted_script = formatted_script.format(config_file=remote_config_path)
-        print("Startup Script complete, executing fmbench now")
-
-        if instance["fmbench_llm_config_fpath"]:
-            logger.info("Going to use custom tokenizer and config")
-            await upload_config_and_tokenizer(
-                instance["hostname"],
-                instance["username"],
-                instance["key_file_path"],
-                instance["fmbench_llm_config_fpath"],
-                instance["fmbench_llm_tokenizer_fpath"],
-                instance["fmbench_tokenizer_remote_dir"],
-            )
-
-        # Upload and execute the script on the instance
-        script_output = await asyncio.get_event_loop().run_in_executor(
-            executor,
-            upload_and_execute_script_invoke_shell,
+        if instance['upload_files']:
+            await upload_file_to_instance_async(
             instance["hostname"],
-            instance["username"],
-            instance["key_file_path"],
-            formatted_script,
-            remote_script_path,
-        )
-        print(f"Script Output from {instance['hostname']}:\n{script_output}")
-
-        # Check for the fmbench completion flag
-        fmbench_complete = await asyncio.get_event_loop().run_in_executor(
-            executor,
-            wait_for_flag,
-            instance,
-            FMBENCH_TEST_COMPLETE_FLAG_FPATH,
-            FMBENCH_LOG_PATH,
-            instance["fmbench_complete_timeout"],
-            SCRIPT_CHECK_INTERVAL_IN_SECONDS,
-        )
-        
-        logger.info("Going to get fmbench.log from the instance now")
-        results_folder = os.path.join(
-            RESULTS_DIR, globals.config_data["general"]["name"]
-        )
-        # Get Log even if fmbench_completes or not
-        await asyncio.get_event_loop().run_in_executor(
-            executor,
-            get_fmbench_log,
-            instance,
-            results_folder,
-            FMBENCH_LOG_REMOTE_PATH,
-        )
-
-        if fmbench_complete:
-            logger.info("Fmbench Run successful, Getting the folders now")
-            await asyncio.get_event_loop().run_in_executor(
-                executor, check_and_retrieve_results_folder, instance, results_folder
+                instance["username"],
+                instance["key_file_path"],
+                file_paths=instance['upload_files']
             )
-            if globals.config_data["run_steps"]["delete_ec2_instance"]:
-                delete_ec2_instance(instance["instance_id"], instance["region"])
-                instance_id_list.remove(instance["instance_id"])
+        num_configs: int = len(instance["config_file"])
+        for cfg_idx, config_file in enumerate(instance["config_file"]):
+            cfg_idx += 1
+            instance_name = instance["instance_name"]
+            logger.info(f"going to run config {cfg_idx} of {num_configs} for instance {instance_name}")
+            # Handle configuration file (download/upload) and get the remote path
+            remote_config_path = await handle_config_file_async(instance, config_file)
+            # Format the script with the remote config file path
+            # Change this later to be a better implementation, right now it is bad.
+            formatted_script = formatted_script.format(config_file=remote_config_path)
+            print("Startup Script complete, executing fmbench now")
+
+            # Upload and execute the script on the instance
+            script_output = await asyncio.get_event_loop().run_in_executor(
+                executor,
+                upload_and_execute_script_invoke_shell,
+                instance["hostname"],
+                instance["username"],
+                instance["key_file_path"],
+                formatted_script,
+                remote_script_path,
+            )
+            print(f"Script Output from {instance['hostname']}:\n{script_output}")
+
+            # Check for the fmbench completion flag
+            fmbench_complete = await asyncio.get_event_loop().run_in_executor(
+                executor,
+                wait_for_flag,
+                instance,
+                FMBENCH_TEST_COMPLETE_FLAG_FPATH,
+                FMBENCH_LOG_PATH,
+                instance["fmbench_complete_timeout"],
+                SCRIPT_CHECK_INTERVAL_IN_SECONDS,
+            )
+            
+            logger.info("Going to get fmbench.log from the instance now")
+            results_folder = os.path.join(
+                RESULTS_DIR, globals.config_data["general"]["name"]
+            )
+            # Get Log even if fmbench_completes or not
+            await asyncio.get_event_loop().run_in_executor(
+                executor,
+                get_fmbench_log,
+                instance,
+                results_folder,
+                FMBENCH_LOG_REMOTE_PATH,
+            )
+
+            if fmbench_complete:
+                logger.info("Fmbench Run successful, Getting the folders now")
+                await asyncio.get_event_loop().run_in_executor(
+                    executor, check_and_retrieve_results_folder, instance, results_folder
+                )
+        if globals.config_data["run_steps"]["delete_ec2_instance"]:
+            delete_ec2_instance(instance["instance_id"], instance["region"])
+            instance_id_list.remove(instance["instance_id"])
 
 
 async def multi_deploy_fmbench(instance_details, remote_script_path):
@@ -311,19 +305,10 @@ if __name__ == "__main__":
                 instance_data_map[instance_id] = {
                     "fmbench_config": instance["fmbench_config"],
                     "post_startup_script": instance["post_startup_script"],
-                    "fmbench_llm_tokenizer_fpath": instance.get(
-                        "fmbench_llm_tokenizer_fpath"
-                    ),
-                    "fmbench_llm_config_fpath": instance.get(
-                        "fmbench_llm_config_fpath"
-                    ),
-                    "fmbench_tokenizer_remote_dir": instance.get(
-                        "fmbench_tokenizer_remote_dir"
-                    ),
                     "fmbench_complete_timeout": instance["fmbench_complete_timeout"],
                     "region": instance.get("region", region),
                     "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
-                    "byo_dataset_fpath": instance.get("byo_dataset_fpath"),
+                    "upload_files": instance.get("upload_files"),
                 }
             else:
                 instance_id = instance["instance_id"]
@@ -352,21 +337,12 @@ if __name__ == "__main__":
                     instance_data_map[instance_id] = {
                         "fmbench_config": instance["fmbench_config"],
                         "post_startup_script": instance["post_startup_script"],
-                        "fmbench_llm_tokenizer_fpath": instance.get(
-                            "fmbench_llm_tokenizer_fpath"
-                        ),
-                        "fmbench_llm_config_fpath": instance.get(
-                            "fmbench_llm_config_fpath"
-                        ),
-                        "fmbench_tokenizer_remote_dir": instance.get(
-                            "fmbench_tokenizer_remote_dir"
-                        ),
                         "fmbench_complete_timeout": instance[
                             "fmbench_complete_timeout"
                         ],
                         "region": instance.get("region", region),
                         "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
-                        "byo_dataset_fpath": instance.get("byo_dataset_fpath"),
+                        "upload_files": instance.get("upload_files"),
                     }
 
                 logger.info(f"done creating instance {idx} of {num_instances}")

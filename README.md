@@ -158,10 +158,10 @@ instances:
   fmbench_config: 
   - fmbench:llama3/8b/config-ec2-llama3-8b-g6e-2xlarge.yml
   upload_files:
-   - local: byo_dataset/custom.jsonl
-     remote: /tmp
-   - local: analytics/pricing.yml
-     remote: /tmp
+  - local: byo_dataset/custom.jsonl
+    remote: /tmp
+  - local: analytics/pricing.yml
+    remote: /tmp
 ```
 
 ## Workflow

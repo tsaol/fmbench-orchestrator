@@ -48,7 +48,7 @@ logging.basicConfig(
 )
 
 
-async def execute_fmbench(instance, formatted_script, remote_script_path):
+async def execute_fmbench(instance, post_install_script, remote_script_path):
     """
     Asynchronous wrapper for deploying an instance using synchronous functions.
     """
@@ -77,8 +77,8 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
             # Handle configuration file (download/upload) and get the remote path
             remote_config_path = await handle_config_file_async(instance, config_file)
             # Format the script with the remote config file path
-            # Change this later to be a better implementation, right now it is bad.
-            formatted_script = formatted_script.format(config_file=remote_config_path)
+            # Change this later to be a better implementation, right now it is bad.            
+            formatted_script = Path(post_install_script).read_text().format(config_file=remote_config_path)
             print("Startup Script complete, executing fmbench now")
 
             # Upload and execute the script on the instance
@@ -115,6 +115,7 @@ async def execute_fmbench(instance, formatted_script, remote_script_path):
                 instance,
                 results_folder,
                 FMBENCH_LOG_REMOTE_PATH,
+                cfg_idx
             )
 
             if fmbench_complete:
@@ -134,18 +135,9 @@ async def multi_deploy_fmbench(instance_details, remote_script_path):
     for instance in instance_details:
         # Make this async as well?
         # Format the script with the specific config file
-        logger.info(f"Instance Details are: {instance}")
-        logger.info(
-            f"Attempting to open bash script at {instance['post_startup_script']}"
-        )
-        with open(instance["post_startup_script"]) as file:
-            bash_script = file.read()
-
-        logger.info("Read Bash Script")
-        logger.info(f"Post startup script is: {bash_script}")
-
+        logger.info(f"Instance Details are: {instance}")       
         # Create an async task for this instance
-        tasks.append(execute_fmbench(instance, bash_script, remote_script_path))
+        tasks.append(execute_fmbench(instance, instance["post_startup_script"], remote_script_path))
 
     # Run all tasks concurrently
     await asyncio.gather(*tasks)

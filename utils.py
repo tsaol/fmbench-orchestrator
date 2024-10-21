@@ -697,7 +697,7 @@ def check_and_retrieve_results_folder(instance: Dict, local_folder_base: str):
             f"Error occured while attempting to check and retrieve results from the instances: {e}"
         )
 
-def get_fmbench_log(instance: Dict, local_folder_base: str, log_file_path: str):
+def get_fmbench_log(instance: Dict, local_folder_base: str, log_file_path: str, iter_count: int):
     """
     Checks for 'fmbench.log' file on a single EC2 instance and retrieves them if found.
 
@@ -716,13 +716,14 @@ def get_fmbench_log(instance: Dict, local_folder_base: str, log_file_path: str):
     log_file_path = log_file_path.format(username=username)
     # Define local folder to store the log file
     local_folder = os.path.join(local_folder_base, instance_name)
-    local_log_file = os.path.join(local_folder, 'fmbench.log')
+    local_log_file = os.path.join(local_folder, f'fmbench_{iter_count}.log')
 
     try:
         # Clear out the local folder if it exists, then recreate it
-        if Path(local_folder).is_dir():
+        if Path(local_folder).is_dir() and iter_count == 1:
+            logger.info(f"going to delete {local_folder}, iter_count={iter_count}")
             shutil.rmtree(local_folder)
-        os.makedirs(local_folder)
+        os.makedirs(local_folder, exist_ok=True)
 
         # Setup SSH and SFTP connection using Paramiko
         key = paramiko.RSAKey.from_private_key_file(key_file_path)

@@ -6,6 +6,33 @@
 
 The **FMBench Orchestrator** is a tool designed to automate the deployment and management of `FMBench` on multiple Amazon EC2 instances in AWS. The multiple instances can be of different instance types (so you could run `g6e`, `p4de` and a `trn1` instances via the same config file), in different AWS regions and also test multiple `FMBench` config files. This orchestrator automates the creation of Security Groups, Key Pairs, EC2 instances, runs `FMBench` for a specific config, retrieves the results, and shuts down the instances after completion. Thus it **simplifies the benchmarking process (no more manual instance creation and cleanup, downloading results folder) and ensures a streamlined and scalable workflow**.
 
+```
++---------------------------+
+| Initialization            |
+| (Configure & Setup)       |
++---------------------------+
+          ↓
++---------------------------+
+| Instance Creation         |
+| (Launch EC2 Instances)    |
++---------------------------+
+          ↓
++---------------------------+
+| FMBENCH Execution         |
+| (Run Benchmark Script)    |
++---------------------------+
+          ↓
++---------------------------+
+| Results Collection        |
+| (Download from instances) |
++---------------------------+
+          ↓
++---------------------------+
+| Instance Termination      |
+| (Terminate Instances)     |
++---------------------------+
+```
+
 ## Table of Contents
 1. [Prerequisites](#prerequisites)
 2. [Installation](#installation)
@@ -171,23 +198,6 @@ instances:
   - local: analytics/pricing.yml
     remote: /tmp
 ```
-
-### Workflow
-
-```
-+---------------------+       +------------------------+       +------------------------+       +---------------------+       +-----------------------+
-| Initialization      |  →    | Instance Creation      |  →    | FMBENCH Execution      |  →    | Results Collection  |  →    | Instance Termination  |
-| (Configure & Setup) |       | (Launch EC2 Instances) |       | (Run Benchmark Script) |       | (Upload to S3)      |       | (Shut Down Instances) |
-+---------------------+       +------------------------+       +------------------------+       +---------------------+       +-----------------------+
-
-```
-
-
-1. **Initialization**: Reads the configuration file and initializes the necessary AWS resources.
-2. **Instance Creation**: Launches the specified number of EC2 instances with the provided configuration.
-3. **FMBENCH Execution**: Runs the FMBENCH benchmark script on each instance.
-4. **Results Collection**: Collects the results from each instance and uploads them to the specified S3 bucket.
-5. **Instance Termination**: Terminates all instances to prevent unnecessary costs.
 
 ### Cleaning Up
 

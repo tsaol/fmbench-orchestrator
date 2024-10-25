@@ -93,7 +93,9 @@ You can either use an existing config file included in this repo, such as [`conf
 python main.py -f configs/config.yml
 ```
 
-Once the run is completed you can analyze the results i.e. compare and contrast the price performance of different EC2 instance types that were a part of the run by running an analytics script. The example below shows how to use the `analytcs.py` script to analyze results obtained from running the orchestrator with the [`llama3-8b-g6e-triton.yml`](configs/llama3/8b/llama3-8b-triton-g6e.yml) config file.
+Once the run is completed you can see the `FMBench` results folder downloaded in the `results` directory under the orchestrator, the `fmbench.log` file is also downloaded from the EC2 instances and placed alongside the results folder.
+
+To analyze the results i.e. compare and contrast the price performance of different EC2 instance types that were a part of the run by running an analytics script. The example below shows how to use the `analytcs.py` script to analyze results obtained from running the orchestrator with the [`llama3-8b-g6e-triton.yml`](configs/llama3/8b/llama3-8b-triton-g6e.yml) config file.
 
 ```{.bashrc}
 python analytics/analytics.py --results-dir results/llama3-8b-g6e-triton --model-id llama3-8b --payload-file payload_en_3000-3840.jsonl --latency-threshold 2
@@ -155,6 +157,17 @@ instances:
      remote: /tmp/fmbench-read/configs/
 ```
 
+### Benchmark multiple config files on the same EC2 instance
+
+Often times we want to benchmark different combinations of parameters on the same EC2 instance, for example we may want to test tensor parallelism degree of 2, 4 and 8 for say `Llama3.1-8b` model on the same EC2 machine say `g6e.48xlarge`. Can do that easily with the orchestrator by specifying a list of config files rather than just a single config file as shown in the following example:
+
+   ```{.bashrc}
+  fmbench_config: 
+  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.48xl-tp-2-mc-max-djl.yml
+  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.48xl-tp-4-mc-max-djl.yml
+  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.48xl-tp-8-mc-max-djl.yml
+  ```
+The orchestrator would in this case first run benchmarking for the first file in the list, and then on the same EC2 instance run benchmarking for the second file and so on and so forth. The results folders and `fmbench.log` files for each of the runs is downloaded at the end when all config files for that instance have been processed.
 
 ## Contributing
 Contributions are welcome! Please fork the repository and submit a pull request with your changes. For major changes, please open an issue first to discuss what you would like to change.

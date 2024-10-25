@@ -18,7 +18,8 @@ from sagemaker_cost_rpm_plot import plot_best_cost_instance_heatmap, plot_tps_vs
 logging.basicConfig(format='[%(asctime)s] p%(process)s {%(filename)s:%(lineno)d} %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-RPM_LIST = [1, 10, 100, 1000, 10000]
+
+RPM_LIST_CSV="1,10,100,1000,10000"
 # default values for latency and concurrency thresholds. To configure the summary table
 # based on custom thresholds, add them as command line arguments
 LATENCY_THRESHOLD: int = 2
@@ -173,7 +174,18 @@ def main():
                              f"instance count is assigned \"1 - cost weightage\" automatically, "
                              f"default={DEFAULT_COST_WEIGHT}",
                         required=False)
-    
+    parser.add_argument('--rpm-list',
+                        type=str,
+                        default=RPM_LIST_CSV,
+                        help=f"comma separate list of requests/minute for which we need to get price performance, "
+                             f"default={RPM_LIST_CSV}",
+                        required=False)
+    parser.add_argument('--results-dir-indirection-level',
+                        type=int,
+                        default=1,
+                        help=f"How many levels inside the results directory are the actual results folder, "
+                            f"default=1",
+                        required=False)
     args = parser.parse_args()
     print(f"main, {args} = args")
 
@@ -185,9 +197,14 @@ def main():
     logger.info(f"pricing={json.dumps(pricing, indent=2)}")
 
     # all results file to be parsed
-    summary_file_pattern: str = os.path.join(args.results_dir, "*",
-                                             f"results-{args.model_id}-*",
-                                             "all_metrics_summary.csv")
+    if args.results_dir_indirection_level == 1:
+        summary_file_pattern: str = os.path.join(args.results_dir, "*",
+                                                 f"results-{args.model_id}-*",
+                                                 "all_metrics_summary.csv")
+    else:
+        summary_file_pattern: str = os.path.join(args.results_dir,
+                                                 f"results-{args.model_id}-*",
+                                                 "all_metrics_summary.csv")
     all_metrics_summary_files = glob.glob(summary_file_pattern,
                                           recursive=True)
     if args.exclude_pattern is not None:
@@ -256,7 +273,8 @@ def main():
     df_summary_all['cost_per_1k_tokens'] = df_summary_all.apply(lambda r: cost_per_1k_tokens(r, pricing), axis=1)
 
     # extrapolate to price per n requests per minue
-    for rpm in RPM_LIST:
+    rpm_list = [int(rpm) for rpm in args.rpm_list.split(",")]
+    for rpm in rpm_list:
         col_name = f"instance_count_and_cost_{rpm}_rpm"
         df_summary_all[col_name] = df_summary_all.apply(lambda r: cost_per_n_rpm(r, rpm, pricing), axis=1)
 

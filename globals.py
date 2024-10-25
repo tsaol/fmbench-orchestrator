@@ -284,11 +284,11 @@ def get_key_pair(region):
         os.makedirs(key_pair_dir)
 
     # Generate the key pair name using the format: config_name-region
-    config_name = config_data["key_pair_gen"]["key_pair_name"]
+    key_pair_name_configured = config_data["key_pair_gen"]["key_pair_name"]
 
     # Generate the key pair name using the format: config_name-region
-    key_pair_name = config_name.format(region=region)
-    logger.info(f"Setting the key pair name as={key_pair_name}")
+    key_pair_name = f"{key_pair_name_configured}_{region}"
+    logger.info(f"key_pair_name_configured={key_pair_name_configured}, setting the key pair name as={key_pair_name}")
     private_key_fname = os.path.join(key_pair_dir, f"{key_pair_name}.pem")
 
     # Check if key pair generation is enabled

@@ -218,7 +218,7 @@ if __name__ == "__main__":
         num_instances: int = len(globals.config_data["instances"])
         for idx, instance in enumerate(globals.config_data["instances"]):
             idx += 1
-            logger.info(f"going to create instance {idx} of {num_instances}")
+            logger.info(f"going to create instance {idx} of {num_instances}, instance={instance}")
             deploy: bool = instance.get("deploy", True)
             if deploy is False:
                 logger.warning(

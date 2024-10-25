@@ -33,17 +33,6 @@ The **FMBench Orchestrator** is a tool designed to automate the deployment and m
 +---------------------------+
 ```
 
-## Table of Contents
-1. [Prerequisites](#prerequisites)
-2. [Installation](#installation)
-3. [Conda Environment Setup](#conda-environment-setup)
-4. [Configuration](#configuration)
-5. [Usage](#usage)
-6. [Workflow](#workflow)
-7. [Cleaning Up](#cleaning-up)
-8. [Contributing](#contributing)
-9. [License](#license)
-
 ## Prerequisites
 
 - **IAM ROLE**: You need an active AWS account having an **IAM Role** necessary permissions to create, manage, and terminate EC2 instances. See [this](docs/iam.md) link for the permissions and trust policies that this IAM role needs to have. Call this IAM role as `fmbench-orchestrator`.
@@ -122,7 +111,7 @@ Take an existing config file from the [`configs`](configs/) folder, create a cop
 
 ### Use an existing `FMBench` config file but modify it slightly for my requirements
 
-1. Download an `FMBench` config file from the [`FMBench repo`](https://github.com/aws-samples/foundation-model-benchmarking-tool/tree/main/src/fmbench/configs) and place it in the [`configs/fmbench](./configs/fmbench/) folder.
+1. Download an `FMBench` config file from the [`FMBench repo`](https://github.com/aws-samples/foundation-model-benchmarking-tool/tree/main/src/fmbench/configs) and place it in the [`configs/fmbench`](./configs/fmbench/) folder.
 1. Modify the downloaded config as needed.
 1. Update the `instance -> fmench_config` section for the instance that needs to use this file to point to the updated config file in `fmbench/configs` so for example if the updated config file was `config-ec2-llama3-8b-g6e-2xlarge-custom.yml` then the following parameter:
 

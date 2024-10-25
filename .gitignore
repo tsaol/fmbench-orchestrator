@@ -12,6 +12,7 @@ downloaded_configs/
 fmbench_llm_utils/
 .venv/
 configs/fmbench/
+!configs/fmbench/.gitkeep
 results/
 analytics/__pycache__
 analytics/results

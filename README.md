@@ -49,7 +49,7 @@ The **FMBench Orchestrator** is a tool designed to automate the deployment and m
     cd fmbench-orchestrator
     ```
 
-## Conda Environment Setup
+### Conda Environment Setup
 
 1. **Create a Conda Environment with Python 3.11**:
 
@@ -69,7 +69,7 @@ The **FMBench Orchestrator** is a tool designed to automate the deployment and m
     pip install -r requirements.txt
     ```
 
-## Running FMBench Orchestrator:
+### Steps to run the orchestrator:
 
 You can either use an existing config file included in this repo, such as [`configs/config.yml`](configs/config.yml) or create your own using the files provided in the [`configs`](configs) directory as a template. Make sure you are in the `fmbench-orchestrator-py311` conda environment.
 
@@ -85,21 +85,21 @@ python analytics/analytics.py --results-dir results/llama3-8b-g6e-triton --model
 
 Running the scripts above creates a `results` folder under `analytics` which contains summaries of the results and a heatmap that helps understand which instance type gives the best price performance at the desired scale (transactions/minute) while maintaining the inference latency below a desired threshold.
 
-# `FMBench` orchestrator configuration guide
+## `FMBench` orchestrator configuration guide
 
-## Overview
+### Overview
 This configuration file is used to manage the deployment and orchestration of multiple EC2 instances for running `FMBench` benchmarks. The file defines various parameters, including AWS settings, run steps, security group settings, key pair management, and instance-specific configurations. This guide explains the purpose of each section and provides details on how to customize the file according to your requirements.
 
-## Configuration Sections
+### Configuration Sections
 
-### AWS Settings
+#### AWS Settings
 
 This section contains the basic settings required to interact with AWS services.
 
 - `region`: Unless you want to specify a region explicitly, this is always set to `{{region}}` which gets replaced with the current region of the EC2 VM on which the orchestrator is being run. The `region` parameter can also be specified with each instance in the `instances` section, if specified in the `instances` section then that value would override the value in this section. This allows for launching instances in a region different from the region in which the orchestrator is running.
 - `hf_token_fpath`: Your Hugging Face token for accessing specific resources or APIs. Always set to `/tmp/hf_token.txt` unless you want to store the token in a different path.
 
-### Run Steps
+#### Run Steps
 
 Defines the various steps in the orchestration process. Set each step to `yes` or `no` based on whether you want that step to be executed.
 
@@ -109,7 +109,7 @@ Defines the various steps in the orchestration process. Set each step to `yes` o
 - `run_bash_script`: Whether to run a startup script on each EC2 instance after deployment.
 - `delete_ec2_instance`: Whether to terminate the EC2 instances after completing the benchmarks.
 
-### Security Group
+#### Security Group
 
 This section configures the security group settings for the EC2 instances. You would typically not need to change anything in this section from what is specified in the [default config file](configs/config.yml).
 
@@ -117,14 +117,14 @@ This section configures the security group settings for the EC2 instances. You w
 - `description`: A brief description of the security group, such as "MultiDeploy EC2 Security Group."
 - `vpc_id`: The VPC ID where the security group will be created. Leave this blank to use the default VPC.
 
-### Key Pair Management
+#### Key Pair Management
 
 Manages the SSH key pair used for accessing the EC2 instances. You would typically not need to change anything in this section from what is specified in the [default config file](configs/config.yml).
 
 - `key_pair_name`: Name of the key pair to be created or used. If `key_pair_generation` is set to `no`, ensure this matches the name of an existing key pair.
 - `key_pair_fpath`: The file path where the key pair file (`.pem`) will be stored locally. Update this path if you have an existing key pair.
 
-### Instances
+#### Instances
 
 Defines the EC2 instances to be launched for running the benchmarks. This section can contain multiple instance configurations.
 
@@ -145,7 +145,7 @@ Defines the EC2 instances to be launched for running the benchmarks. This sectio
     ```
 
 
-### Example Instance Configuration
+#### Sample instance configuration
 
 The following is an example configuration for deploying a `g6e.2xlarge` instance with GPU AMI (Ubuntu Deep Learning OSS) and startup scripts:
 
@@ -172,7 +172,7 @@ instances:
     remote: /tmp
 ```
 
-## Workflow
+### Workflow
 
 1. **Initialization**: Reads the configuration file and initializes the necessary AWS resources.
 2. **Instance Creation**: Launches the specified number of EC2 instances with the provided configuration.
@@ -180,7 +180,7 @@ instances:
 4. **Results Collection**: Collects the results from each instance and uploads them to the specified S3 bucket.
 5. **Instance Termination**: Terminates all instances to prevent unnecessary costs.
 
-## Cleaning Up
+### Cleaning Up
 
 Cleanup is done automatically. But if you select **no** in config, you would have to manually terminate the instances from EC2 console.
 

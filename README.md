@@ -174,11 +174,13 @@ instances:
 
 ### Workflow
 
-+------------------+       +---------------------+       +---------------------+       +---------------------+       +-----------------------+
-| Initialization   |  →    | Instance Creation   |  →    | FMBENCH Execution   |  →    | Results Collection  |  →    | Instance Termination  |
-| (Configure  tup) |       | (Launch EC2 Innces) |       | (Run Benchk Script) |       | (Upload to S3)      |       | (Shut Down Instances) |
-+------------------+       +---------------------+       +---------------------+       +---------------------+       +-----------------------+
+```
++---------------------+       +------------------------+       +------------------------+       +---------------------+       +-----------------------+
+| Initialization      |  →    | Instance Creation      |  →    | FMBENCH Execution      |  →    | Results Collection  |  →    | Instance Termination  |
+| (Configure & Setup) |       | (Launch EC2 Instances) |       | (Run Benchmark Script) |       | (Upload to S3)      |       | (Shut Down Instances) |
++---------------------+       +------------------------+       +------------------------+       +---------------------+       +-----------------------+
 
+```
 
 
 1. **Initialization**: Reads the configuration file and initializes the necessary AWS resources.

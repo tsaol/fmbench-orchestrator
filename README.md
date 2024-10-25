@@ -174,6 +174,13 @@ instances:
 
 ### Workflow
 
++------------------+       +---------------------+       +---------------------+       +---------------------+       +-----------------------+
+| Initialization   |  →    | Instance Creation   |  →    | FMBENCH Execution   |  →    | Results Collection  |  →    | Instance Termination  |
+| (Configure  tup) |       | (Launch EC2 Innces) |       | (Run Benchk Script) |       | (Upload to S3)      |       | (Shut Down Instances) |
++------------------+       +---------------------+       +---------------------+       +---------------------+       +-----------------------+
+
+
+
 1. **Initialization**: Reads the configuration file and initializes the necessary AWS resources.
 2. **Instance Creation**: Launches the specified number of EC2 instances with the provided configuration.
 3. **FMBENCH Execution**: Runs the FMBENCH benchmark script on each instance.

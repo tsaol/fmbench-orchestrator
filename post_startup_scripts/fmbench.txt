@@ -6,7 +6,7 @@ if [[ "$CONDA_DEFAULT_ENV" == "fmbench_python311" ]]; then
     echo "The current environment is fmbench_python311. Running FMBench..."
     
     # Run fmbench and redirect output to a log file
-    nohup fmbench --config-file {config_file} --local-mode yes --write-bucket placeholder --tmp-dir /tmp > fmbench.log 2>&1 &
+    nohup fmbench --config-file {config_file} --local-mode {_local_mode_} --write-bucket {_write_bucket_} --tmp-dir /tmp > fmbench.log 2>&1 &
     FM_BENCH_PID=$!
     echo "FMBench is running with PID $FM_BENCH_PID. Logs are being written to fmbench.log."
     

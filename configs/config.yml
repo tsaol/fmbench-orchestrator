@@ -88,7 +88,7 @@ instances:
   ebs_VolumeType: gp3
   startup_script: startup_scripts/ubuntu_startup.txt
   post_startup_script: post_startup_scripts/fmbench.txt
-  post_startup_script_args:
+  post_startup_script_params:
    - local_mode: yes
    - write_bucket: placeholder
   # Timeout period in Seconds before a run is stopped

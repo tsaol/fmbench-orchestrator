@@ -297,6 +297,7 @@ if __name__ == "__main__":
                 instance_data_map[instance_id] = {
                     "fmbench_config": instance["fmbench_config"],
                     "post_startup_script": instance["post_startup_script"],
+                    "post_startup_script_params" : instance.get("post_startup_script_params"),
                     "fmbench_complete_timeout": instance["fmbench_complete_timeout"],
                     "region": instance.get("region", region),
                     "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
@@ -332,6 +333,7 @@ if __name__ == "__main__":
                         "fmbench_complete_timeout": instance[
                             "fmbench_complete_timeout"
                         ],
+                        "post_startup_script_params" : instance.get("post_startup_script_params"),
                         "region": instance.get("region", region),
                         "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
                         "upload_files": instance.get("upload_files"),

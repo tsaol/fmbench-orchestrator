@@ -73,6 +73,9 @@ async def execute_fmbench(instance, post_install_script, remote_script_path):
         for cfg_idx, config_file in enumerate(instance["config_file"]):
             cfg_idx += 1
             instance_name = instance["instance_name"]
+            local_mode_param = POST_STARTUP_LOCAL_MODE_VAR
+            write_bucket_param = POST_STARTUP_WRITE_BUCKET_VAR
+
             logger.info(
                 f"going to run config {cfg_idx} of {num_configs} for instance {instance_name}"
             )
@@ -81,17 +84,17 @@ async def execute_fmbench(instance, post_install_script, remote_script_path):
             # Format the script with the remote config file path
             # Change this later to be a better implementation, right now it is bad.
 
-            local_mode_param = instance.get("post_startup_params", {}).get(
-                "local_mode", POST_STARTUP_LOCAL_MODE_VAR
-            )
-            write_bucket_param = instance.get("post_startup_params", {}).get(
-                "write_bucket", POST_STARTUP_WRITE_BUCKET_VAR
-            )
+            # Iterate through the list to find the parameters
+            for param in instance.get("post_startup_script_params", []):
+                if "local_mode" in param:
+                    local_mode_param = param["local_mode"]
+                if "write_bucket" in param:
+                    write_bucket_param = param["write_bucket"]
 
             # Convert `local_mode_param` to "yes" or "no" if it is a boolean
             if isinstance(local_mode_param, bool):
                 local_mode_param = "yes" if local_mode_param else "no"
-                
+
             formatted_script = (
                 Path(post_install_script)
                 .read_text()

@@ -60,25 +60,48 @@ async def execute_fmbench(instance, post_install_script, remote_script_path):
         STARTUP_COMPLETE_FLAG_FPATH,
         CLOUD_INITLOG_PATH,
     )
-  
+
     if startup_complete:
-        if instance['upload_files']:
+        if instance["upload_files"]:
             await upload_file_to_instance_async(
-            instance["hostname"],
+                instance["hostname"],
                 instance["username"],
                 instance["key_file_path"],
-                file_paths=instance['upload_files']
+                file_paths=instance["upload_files"],
             )
         num_configs: int = len(instance["config_file"])
         for cfg_idx, config_file in enumerate(instance["config_file"]):
             cfg_idx += 1
             instance_name = instance["instance_name"]
-            logger.info(f"going to run config {cfg_idx} of {num_configs} for instance {instance_name}")
+            logger.info(
+                f"going to run config {cfg_idx} of {num_configs} for instance {instance_name}"
+            )
             # Handle configuration file (download/upload) and get the remote path
             remote_config_path = await handle_config_file_async(instance, config_file)
             # Format the script with the remote config file path
-            # Change this later to be a better implementation, right now it is bad.            
-            formatted_script = Path(post_install_script).read_text().format(config_file=remote_config_path)
+            # Change this later to be a better implementation, right now it is bad.
+
+            local_mode_param = instance.get("post_startup_params", {}).get(
+                "local_mode", POST_STARTUP_LOCAL_MODE_VAR
+            )
+            write_bucket_param = instance.get("post_startup_params", {}).get(
+                "write_bucket", POST_STARTUP_WRITE_BUCKET_VAR
+            )
+
+            # Convert `local_mode_param` to "yes" or "no" if it is a boolean
+            if isinstance(local_mode_param, bool):
+                local_mode_param = "yes" if local_mode_param else "no"
+                
+            formatted_script = (
+                Path(post_install_script)
+                .read_text()
+                .format(
+                    config_file=remote_config_path,
+                    local_mode=local_mode_param,
+                    write_bucket=write_bucket_param,
+                )
+            )
+
             print("Startup Script complete, executing fmbench now")
 
             # Upload and execute the script on the instance
@@ -103,7 +126,7 @@ async def execute_fmbench(instance, post_install_script, remote_script_path):
                 instance["fmbench_complete_timeout"],
                 SCRIPT_CHECK_INTERVAL_IN_SECONDS,
             )
-            
+
             logger.info("Going to get fmbench.log from the instance now")
             results_folder = os.path.join(
                 RESULTS_DIR, globals.config_data["general"]["name"]
@@ -115,13 +138,16 @@ async def execute_fmbench(instance, post_install_script, remote_script_path):
                 instance,
                 results_folder,
                 FMBENCH_LOG_REMOTE_PATH,
-                cfg_idx
+                cfg_idx,
             )
 
             if fmbench_complete:
                 logger.info("Fmbench Run successful, Getting the folders now")
                 await asyncio.get_event_loop().run_in_executor(
-                    executor, check_and_retrieve_results_folder, instance, results_folder
+                    executor,
+                    check_and_retrieve_results_folder,
+                    instance,
+                    results_folder,
                 )
         if globals.config_data["run_steps"]["delete_ec2_instance"]:
             delete_ec2_instance(instance["instance_id"], instance["region"])
@@ -135,9 +161,13 @@ async def multi_deploy_fmbench(instance_details, remote_script_path):
     for instance in instance_details:
         # Make this async as well?
         # Format the script with the specific config file
-        logger.info(f"Instance Details are: {instance}")       
+        logger.info(f"Instance Details are: {instance}")
         # Create an async task for this instance
-        tasks.append(execute_fmbench(instance, instance["post_startup_script"], remote_script_path))
+        tasks.append(
+            execute_fmbench(
+                instance, instance["post_startup_script"], remote_script_path
+            )
+        )
 
     # Run all tasks concurrently
     await asyncio.gather(*tasks)
@@ -218,14 +248,16 @@ if __name__ == "__main__":
         num_instances: int = len(globals.config_data["instances"])
         for idx, instance in enumerate(globals.config_data["instances"]):
             idx += 1
-            logger.info(f"going to create instance {idx} of {num_instances}, instance={instance}")
+            logger.info(
+                f"going to create instance {idx} of {num_instances}, instance={instance}"
+            )
             deploy: bool = instance.get("deploy", True)
             if deploy is False:
                 logger.warning(
                     f"deploy={deploy} for instance={json.dumps(instance, indent=2)}, skipping it..."
                 )
                 continue
-            region = instance.get("region", globals.config_data["aws"].get('region'))
+            region = instance.get("region", globals.config_data["aws"].get("region"))
             startup_script = instance["startup_script"]
             logger.info(f"Region Set for instance is: {region}")
             if globals.config_data["run_steps"]["security_group_creation"]:
@@ -236,7 +268,9 @@ if __name__ == "__main__":
             if region is not None:
                 PRIVATE_KEY_FNAME, PRIVATE_KEY_NAME = get_key_pair(region)
             else:
-                logger.error(f"Region is not provided in the configuration file. Make sure the region exists. Region: {region}")
+                logger.error(
+                    f"Region is not provided in the configuration file. Make sure the region exists. Region: {region}"
+                )
             # command_to_run = instance["command_to_run"]
             with open(f"{startup_script}", "r") as file:
                 user_data_script = file.read()
@@ -297,7 +331,9 @@ if __name__ == "__main__":
                 instance_data_map[instance_id] = {
                     "fmbench_config": instance["fmbench_config"],
                     "post_startup_script": instance["post_startup_script"],
-                    "post_startup_script_params" : instance.get("post_startup_script_params"),
+                    "post_startup_script_params": instance.get(
+                        "post_startup_script_params"
+                    ),
                     "fmbench_complete_timeout": instance["fmbench_complete_timeout"],
                     "region": instance.get("region", region),
                     "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
@@ -333,7 +369,9 @@ if __name__ == "__main__":
                         "fmbench_complete_timeout": instance[
                             "fmbench_complete_timeout"
                         ],
-                        "post_startup_script_params" : instance.get("post_startup_script_params"),
+                        "post_startup_script_params": instance.get(
+                            "post_startup_script_params"
+                        ),
                         "region": instance.get("region", region),
                         "PRIVATE_KEY_FNAME": PRIVATE_KEY_FNAME,
                         "upload_files": instance.get("upload_files"),

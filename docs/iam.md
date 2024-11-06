@@ -2,8 +2,9 @@
 
 Here are the permissions and trust policies that the IAM role assigned to the Amazon EC2 machines used by the FMBench orchestrator needs to have. This role is used both for the driver node i.e. the machine on which the orchestrator is installed and the individual EC2 VMs created by the driver node on which the FMBench benchmarking runs.
 
-
-1. Permissions
+## Create the permission policy under IAM -> Policies.  
+Name it something like ```fmbench-orchestrator-permissions```
+1. Permissions 
 
     ```{.bash}
     {
@@ -86,6 +87,8 @@ Here are the permissions and trust policies that the IAM role assigned to the Am
     }
     ```
 
+## Create the role itself under IAM-> Roles
+Use the AWS Service/EC2 use case.  Name it ```fmbench-orchestrator``` and attach the permissions policy created above.  You will have the option to add a Trust policy (shown below), but this should be the default.
 1. Trust policies
 
     ```{.bash}

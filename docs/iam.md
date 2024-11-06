@@ -105,3 +105,12 @@ Use the AWS Service/EC2 use case.  Name it ```fmbench-orchestrator``` and attach
         ]
     }
     ```
+
+
+## Bedrock and Sagemaker endpoint support
+
+   As of `11/4/24`, Bedrock and Sagemaker endpoints are supported through the FMBench Orchestrator, To use these as well, add these policies to the IAM role you just created.
+
+   1. AmazonBedrockFullAccess
+   2. AmazonS3FullAccess
+   3. AmazonSageMakerFullAccess

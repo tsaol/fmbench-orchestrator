@@ -6,6 +6,8 @@ remote_script_path: str = "/home/{username}/run_fmbench.sh"
 YAML_FILE_PATH: str = "config.yml"
 DEFAULT_EC2_USERNAME: str = "ec2-user"
 BYO_DATASET_FILE_PATH: str = "/tmp/fmbench-read/source_data/"
+POST_STARTUP_LOCAL_MODE_VAR: str = "yes"
+POST_STARTUP_WRITE_BUCKET_VAR: str = "placeholder"
 AWS_CHIPS_PREFIX_LIST: List[str] = ["inf2", "trn1"]
 IS_NEURON_INSTANCE = lambda instance_type: any([instance_type.startswith(p) for p in AWS_CHIPS_PREFIX_LIST])
 

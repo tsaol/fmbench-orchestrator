@@ -90,7 +90,7 @@ The **FMBench Orchestrator** is a tool designed to automate the deployment and m
 You can either use an existing config file included in this repo, such as [`configs/config.yml`](configs/config.yml) or create your own using the files provided in the [`configs`](configs) directory as a template. Make sure you are in the `fmbench-orchestrator-py311` conda environment.
 
 ```bash
-python main.py -f configs/config.yml
+python main.py --config-file configs/config.yml
 ```
 
 Once the run is completed you can see the `FMBench` results folder downloaded in the `results` directory under the orchestrator, the `fmbench.log` file is also downloaded from the EC2 instances and placed alongside the results folder.

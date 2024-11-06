@@ -791,6 +791,7 @@ def generate_instance_details(instance_id_list, instance_data_map):
         fmbench_config = config_entry["fmbench_config"]
         post_startup_script = config_entry["post_startup_script"]
         upload_files = config_entry.get("upload_files")
+        post_startup_script_params = config_entry.get("post_startup_script_params")
         fmbench_complete_timeout = config_entry["fmbench_complete_timeout"]
         region = config_entry["region"]
         PRIVATE_KEY_FNAME = config_entry["PRIVATE_KEY_FNAME"]
@@ -816,6 +817,7 @@ def generate_instance_details(instance_id_list, instance_data_map):
                     ),
                     "config_file": fmbench_config,
                     "post_startup_script": post_startup_script,
+                    "post_startup_script_params" : post_startup_script_params,
                     "upload_files": upload_files,
                     "fmbench_complete_timeout": fmbench_complete_timeout,
                     "region": config_entry.get("region", "us-east-1"),

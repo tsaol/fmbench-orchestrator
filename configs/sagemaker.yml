@@ -1,6 +1,6 @@
 # general configuration applicable to the entire app
 general:
-  name: llama3.1-8b-g6e-p5-djl
+  name: sagemaker
 
 aws:
   # This is the path to the hf token file that contains your custom
@@ -24,7 +24,7 @@ run_steps:
   deploy_ec2_instance: yes
   create_iam_role: no
   run_bash_script: yes
-  delete_ec2_instance: no
+  delete_ec2_instance: yes
 
 security_group:
   group_name: fmbench_orchestrator_sg
@@ -39,7 +39,7 @@ key_pair_gen:
   #Need to change this name to something better?
   # This assumes that if key_pair_generation is false, you have the key pair stored in the root.
   # If so, change the file name to your KP name and the script will pick it up.
-  key_pair_name: fmbench_orchestrator_key_pair-{{region}}
+  key_pair_name: fmbench_orchestrator_key_pair
 
 #Instance follows the format below.
 #   instance_id: {instance_id_here} if Instance_id, then you need to bring your own private key
@@ -75,6 +75,8 @@ key_pair_gen:
 # DeepLearning AMI AL2 : ami-07f302d2a74e2b584
 # Al2 AMI, CPU bench : ami-0e54eba7c51c234f6
 
+# Take the below as list of dict as there might be 2 instances with the same AMI
+
 defaults: &ec2_settings
   region: {{region}}
   ami_id: {{gpu}}
@@ -85,46 +87,13 @@ defaults: &ec2_settings
   ebs_VolumeType: gp3
   startup_script: startup_scripts/ubuntu_startup.txt
   post_startup_script: post_startup_scripts/fmbench.txt
+  post_startup_script_params:
+    write_bucket: {{write_bucket}}
   # Timeout period in Seconds before a run is stopped
-  fmbench_complete_timeout: 2400
-  
+  fmbench_complete_timeout: 10000
+
 instances:
-- instance_type: g6e.2xlarge
-  deploy: yes
+- instance_type: m7a.xlarge
   <<: *ec2_settings
   fmbench_config: 
-  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.2xl-tp-1-mc-max-djl.yml
-
-- instance_type: g6e.4xlarge
-  deploy: yes
-  <<: *ec2_settings
-  fmbench_config: 
-  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.4xl-tp-1-mc-max-djl.yml
-
-- instance_type: g6e.12xlarge
-  deploy: yes
-  <<: *ec2_settings
-  fmbench_config: 
-  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.12xl-tp-2-mc-max-djl.yml
-  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.12xl-tp-4-mc-max-djl.yml
-
-- instance_type: g6e.24xlarge
-  deploy: yes
-  <<: *ec2_settings
-  fmbench_config: 
-  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.24xl-tp-2-mc-max-djl.yml
-  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.24xl-tp-4-mc-max-djl.yml
-
-- instance_type: g6e.48xlarge
-  deploy: yes
-  <<: *ec2_settings
-  fmbench_config: 
-  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.48xl-tp-2-mc-max-djl.yml
-  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.48xl-tp-4-mc-max-djl.yml
-  - fmbench:llama3.1/8b/config-llama3.1-8b-g6e.48xl-tp-8-mc-max-djl.yml
-
-- instance_type: p5.48xlarge
-  deploy: no
-  <<: *ec2_settings
-  fmbench_config: 
-  - fmbench:llama3.1/8b/config-ec2-llama3-1-8b-p5-tp-2-mc-max.yml
+  - {{config_file}}

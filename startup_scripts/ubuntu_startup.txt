@@ -71,17 +71,20 @@ if neuron-ls && [ "$neuron" = "True" ]; then
 fi
 
 
-# install triton inference server
-cd ~
-git clone https://github.com/triton-inference-server/tensorrtllm_backend.git --branch v0.12.0
-# Update the submodules
-cd tensorrtllm_backend
-# Install git-lfs if needed
-sudo apt --fix-broken install -y
-sudo apt-get update -y && sudo apt-get install git-lfs -y --no-install-recommends
-git lfs install
-git submodule update --init --recursive
+# install triton inference server, install only if running on a GPU instance
+if nvidia-smi; then
+    cd ~
+    git clone https://github.com/triton-inference-server/tensorrtllm_backend.git --branch v0.12.0
+    # Update the submodules
+    cd tensorrtllm_backend
+    # Install git-lfs if needed
+    sudo apt --fix-broken install -y
+    sudo apt-get update -y && sudo apt-get install git-lfs -y --no-install-recommends
+    git lfs install
+    git submodule update --init --recursive
+fi
 
 source /home/ubuntu/.bashrc
 touch /tmp/startup_complete.flag
+
 EOF

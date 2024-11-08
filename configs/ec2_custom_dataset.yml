@@ -20,7 +20,7 @@ aws:
 # FMBench orchestration test.
 run_steps:
   security_group_creation: yes
-  key_pair_generation: no
+  key_pair_generation: yes
   deploy_ec2_instance: yes
   create_iam_role: no
   run_bash_script: yes
@@ -39,7 +39,7 @@ key_pair_gen:
   #Need to change this name to something better?
   # This assumes that if key_pair_generation is false, you have the key pair stored in the root.
   # If so, change the file name to your KP name and the script will pick it up.
-  key_pair_name: H1-kp
+  key_pair_name: fmbench_orchestrator_key_pair
 
 #Instance follows the format below.
 #   instance_id: {instance_id_here} if Instance_id, then you need to bring your own private key
@@ -78,12 +78,22 @@ key_pair_gen:
 # Take the below as list of dict as there might be 2 instances with the same AMI
 
 instances:
-- instance_id: i-your-instance-id
-  private_key_fname: key_pair/H1-kp.pem
+- instance_type: g6e.2xlarge
   region: {{region}}
-  startup_script: startup_scripts/gpu_ubuntu_startup.txt
+  ami_id: {{gpu}}
+  device_name: /dev/sda1
+  ebs_del_on_termination: True
+  ebs_Iops: 16000
+  ebs_VolumeSize: 250
+  ebs_VolumeType: gp3
+  startup_script: startup_scripts/ubuntu_startup.txt
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
   fmbench_config: 
   - fmbench:llama3/8b/config-ec2-llama3-8b-g6e-2xlarge.yml
+  upload_files:
+  - local: byo_dataset/custom.jsonl
+    remote: /tmp/fmbench-read/source_data/
+  - local: analytics/pricing.yml
+    remote: /tmp/fmbench-read/configs/

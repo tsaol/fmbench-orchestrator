@@ -84,12 +84,11 @@ async def execute_fmbench(instance, post_install_script, remote_script_path):
             # Format the script with the remote config file path
             # Change this later to be a better implementation, right now it is bad.
 
-            # Iterate through the list to find the parameters
-            for param in instance.get("post_startup_script_params", []):
-                if "local_mode" in param:
-                    local_mode_param = param["local_mode"]
-                if "write_bucket" in param:
-                    write_bucket_param = param["write_bucket"]
+            # override defaults for post install script params if specified
+            pssp = instance.get("post_startup_script_params")
+            if pssp is not None:
+                local_mode_param = pssp.get("local_mode", local_mode_param)
+                write_bucket_param = pssp.get("write_bucket", write_bucket_param)
 
             # Convert `local_mode_param` to "yes" or "no" if it is a boolean
             if isinstance(local_mode_param, bool):
@@ -105,19 +104,36 @@ async def execute_fmbench(instance, post_install_script, remote_script_path):
                 )
             )
 
-            print("Startup Script complete, executing fmbench now")
+            
 
             # Upload and execute the script on the instance
-            script_output = await asyncio.get_event_loop().run_in_executor(
-                executor,
-                upload_and_execute_script_invoke_shell,
-                instance["hostname"],
-                instance["username"],
-                instance["key_file_path"],
-                formatted_script,
-                remote_script_path,
-            )
-            print(f"Script Output from {instance['hostname']}:\n{script_output}")
+            retries = 0
+            max_retries = 2
+            retry_sleep = 60
+            while True:
+                logger.info("Startup Script complete, executing fmbench now")
+                script_output = await asyncio.get_event_loop().run_in_executor(
+                    executor,
+                    upload_and_execute_script_invoke_shell,
+                    instance["hostname"],
+                    instance["username"],
+                    instance["key_file_path"],
+                    formatted_script,
+                    remote_script_path,
+                )
+                logger.info(f"Script Output from {instance['hostname']}:\n{script_output}")
+                if script_output != "":
+                    break
+                else:
+                    logger.error(f"post startup script not successfull after {retries}")
+                    if retries < max_retries:
+                        logger.error(f"post startup script retries={retries}, trying after a {retry_sleep}s sleep")
+                    else:
+                        logger.error(f"post startup script retries={retries}, not retrying any more, benchmarking "
+                                    f"for instance={instance} will fail....")
+                        break
+                time.sleep(retry_sleep)
+                retries += 1
 
             # Check for the fmbench completion flag
             fmbench_complete = await asyncio.get_event_loop().run_in_executor(
@@ -198,11 +214,26 @@ if __name__ == "__main__":
         required=False,
         default="configs/ami_mapping.yml",
     )
+    parser.add_argument(
+        "--fmbench-config-file",
+        type=str,
+        help="Config file to use with fmbench, this is used if the orchestrator config file uses the \"{{config_file}}\" format for specifying the fmbench config file",
+        required=False
+    )
+    parser.add_argument(
+        "--write-bucket",
+        type=str,
+        help="S3 bucket to store model files for benchmarking on SageMaker",
+        required=False
+    )
 
     args = parser.parse_args()
     logger.info(f"main, {args} = args")
 
-    globals.config_data = load_yaml_file(args.config_file, args.ami_mapping_file)
+    globals.config_data = load_yaml_file(args.config_file,
+                                         args.ami_mapping_file,
+                                         args.fmbench_config_file,
+                                         args.write_bucket)
     logger.info(f"Loaded Config {json.dumps(globals.config_data, indent=2)}")
 
     hf_token_fpath = globals.config_data["aws"].get("hf_token_fpath")

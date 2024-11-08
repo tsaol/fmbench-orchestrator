@@ -75,13 +75,9 @@ key_pair_gen:
 # DeepLearning AMI AL2 : ami-07f302d2a74e2b584
 # Al2 AMI, CPU bench : ami-0e54eba7c51c234f6
 
-# Take the below as list of dict as there might be 2 instances with the same AMI
-
-instances:
-- instance_type: g6e.2xlarge
-  deploy: yes
+defaults: &ec2_settings
   region: {{region}}
-  ami_id: {{ gpu }}
+  ami_id: {{gpu}}
   device_name: /dev/sda1
   ebs_del_on_termination: True
   ebs_Iops: 16000
@@ -91,70 +87,35 @@ instances:
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 2400
+
+instances:
+- instance_type: g6e.2xlarge
+  deploy: yes
+  <<: *ec2_settings
   fmbench_config: 
   - fmbench:llama3/8b/config-ec2-llama3-8b-g6e-2xlarge.yml
 
 - instance_type: g6e.4xlarge
   deploy: yes
-  region: {{region}}
-  ami_id: {{ gpu }}
-  device_name: /dev/sda1
-  ebs_del_on_termination: True
-  ebs_Iops: 16000
-  ebs_VolumeSize: 250
-  ebs_VolumeType: gp3
-  startup_script: startup_scripts/ubuntu_startup.txt
-  post_startup_script: post_startup_scripts/fmbench.txt
-  # Timeout period in Seconds before a run is stopped
-  fmbench_complete_timeout: 2400
+  <<: *ec2_settings
   fmbench_config: 
   - fmbench:llama3/8b/config-llama3-8b-g6e.4xl-tp-1-mc-max-djl-ec2.yml
 
 - instance_type: g6e.12xlarge
   deploy: yes
-  region: {{region}}
-  ami_id: {{ gpu }}
-  device_name: /dev/sda1
-  ebs_del_on_termination: True
-  ebs_Iops: 16000
-  ebs_VolumeSize: 250
-  ebs_VolumeType: gp3
-  startup_script: startup_scripts/ubuntu_startup.txt
-  post_startup_script: post_startup_scripts/fmbench.txt
-  # Timeout period in Seconds before a run is stopped
-  fmbench_complete_timeout: 2400
+  <<: *ec2_settings
   fmbench_config: 
   - fmbench:llama3/8b/config-llama3-8b-g6e.12xl-tp-2-mc-max-djl-ec2.yml
 
 - instance_type: g6e.24xlarge
   deploy: yes
-  region: {{region}}
-  ami_id: {{ gpu }}
-  device_name: /dev/sda1
-  ebs_del_on_termination: True
-  ebs_Iops: 16000
-  ebs_VolumeSize: 250
-  ebs_VolumeType: gp3
-  startup_script: startup_scripts/ubuntu_startup.txt
-  post_startup_script: post_startup_scripts/fmbench.txt
-  # Timeout period in Seconds before a run is stopped
-  fmbench_complete_timeout: 2400
+  <<: *ec2_settings
   fmbench_config: 
   - fmbench:llama3/8b/config-llama3-8b-g6e.24xl-tp-2-mc-max-djl-ec2.yml
 
 - instance_type: g6e.48xlarge
   deploy: yes
-  region: {{region}}
-  ami_id: {{ gpu }}
-  device_name: /dev/sda1
-  ebs_del_on_termination: True
-  ebs_Iops: 16000
-  ebs_VolumeSize: 250
-  ebs_VolumeType: gp3
-  startup_script: startup_scripts/ubuntu_startup.txt
-  post_startup_script: post_startup_scripts/fmbench.txt
-  # Timeout period in Seconds before a run is stopped
-  fmbench_complete_timeout: 2400
+  <<: *ec2_settings
   fmbench_config: 
   - fmbench:llama3/8b/config-llama3-8b-g6e.48xl-tp-2-mc-max-djl-ec2.yml
 

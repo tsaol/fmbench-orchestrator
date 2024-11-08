@@ -2,8 +2,10 @@
 
 Here are the permissions and trust policies that the IAM role assigned to the Amazon EC2 machines used by the FMBench orchestrator needs to have. This role is used both for the driver node i.e. the machine on which the orchestrator is installed and the individual EC2 VMs created by the driver node on which the FMBench benchmarking runs.
 
-## Create the permission policy under IAM -> Policies.  
+## Create the permission policy under IAM -> Policies 
+
 Name it something like ```fmbench-orchestrator-permissions```
+
 1. Permissions 
 
     ```{.bash}
@@ -88,6 +90,7 @@ Name it something like ```fmbench-orchestrator-permissions```
     ```
 
 ## Create the role itself under IAM-> Roles
+
 Use the AWS Service/EC2 use case.  Name it ```fmbench-orchestrator``` and attach the permissions policy created above.  You will have the option to add a Trust policy (shown below), but this should be the default.
 1. Trust policies
 
@@ -101,16 +104,30 @@ Use the AWS Service/EC2 use case.  Name it ```fmbench-orchestrator``` and attach
                     "Service": "ec2.amazonaws.com"
                 },
                 "Action": "sts:AssumeRole"
+            },
+            {
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": "sagemaker.amazonaws.com"
+                },
+                "Action": "sts:AssumeRole"
+            },
+            {
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": "bedrock.amazonaws.com"
+                },
+                "Action": "sts:AssumeRole"
             }
         ]
     }
     ```
 
 
-## Bedrock and Sagemaker endpoint support
+## Amazon Bedrock and Amazon SageMaker endpoint support
 
-   As of `11/4/24`, Bedrock and Sagemaker endpoints are supported through the FMBench Orchestrator, To use these as well, add these policies to the IAM role you just created.
+Add these policies to the IAM role you just created.
 
-   1. AmazonBedrockFullAccess
-   2. AmazonS3FullAccess
-   3. AmazonSageMakerFullAccess
+1. AmazonBedrockFullAccess
+1. AmazonS3FullAccess
+1. AmazonSageMakerFullAccess

@@ -106,7 +106,10 @@ def _normalize_yaml_param_spacing(template_content: str, variable_name: str) -> 
     return normalized_content
 
 
-def load_yaml_file(config_file_path: str, ami_mapping_file_path: str) -> Optional[Dict]:
+def load_yaml_file(config_file_path: str,
+                   ami_mapping_file_path: str,
+                   fmbench_config_file: Optional[str],
+                   write_bucket: Optional[str]) -> Optional[Dict]:
     """
     Load and parse a YAML file using Jinja2 templating for region and AMI ID substitution.
 
@@ -135,8 +138,15 @@ def load_yaml_file(config_file_path: str, ami_mapping_file_path: str) -> Optiona
     # Get the global region where this orchestrator is running
     # Initial context with 'region'
     global_region = get_region()
-    context = {'region': global_region}
-    # First rendering to substitute 'region'
+    context = {'region': global_region, 'config_file': fmbench_config_file, 'write_bucket': write_bucket}
+    # First rendering to substitute 'region' and 'config_file'
+    # if the {{config_file}} placeholder does not exist in the config.yml
+    # then the 'config_file' key in the 'context' dict does not do anything
+    # if the {{config_file}} placeholder does indeed exist then it will get
+    # replaced with the value in the context dict, if however the user did not
+    # provide the value as a command line argument to the orchestrator then it
+    # would get replaced by None and we would have no fmbench config file and the 
+    # code would raise an exception that it cannot continue
     template = Template(template_content)
     rendered_yaml = template.render(context)
 
@@ -184,6 +194,10 @@ def load_yaml_file(config_file_path: str, ami_mapping_file_path: str) -> Optiona
         fmbench_config_paths = instance['fmbench_config']
         if isinstance(fmbench_config_paths, list):
             for j in range(len(fmbench_config_paths)):
+                if fmbench_config_paths[j] is None or fmbench_config_paths[j] == 'None':
+                    raise Exception(f"instance {i+1}, instance_type={instance['instance_type']}, "
+                                    f"no fmbench_config file provided, cannot continue")
+
                 if fmbench_config_paths[j].startswith(FMBENCH_CFG_PREFIX):
                     fmbench_config_paths[j] = fmbench_config_paths[j].replace(FMBENCH_CFG_PREFIX, FMBENCH_CFG_GH_PREFIX)
             config_data['instances'][i]['fmbench_config'] = fmbench_config_paths

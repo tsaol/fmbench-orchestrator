@@ -4,7 +4,7 @@
 
 ## Overview
 
-The **FMBench Orchestrator** is a tool designed to automate the deployment and management of `FMBench` on multiple Amazon EC2 instances in AWS. The multiple instances can be of different instance types (so you could run `g6e`, `p4de` and a `trn1` instances via the same config file), in different AWS regions and also test multiple `FMBench` config files. This orchestrator automates the creation of Security Groups, Key Pairs, EC2 instances, runs `FMBench` for a specific config, retrieves the results, and shuts down the instances after completion. Thus it **simplifies the benchmarking process (no more manual instance creation and cleanup, downloading results folder) and ensures a streamlined and scalable workflow**.
+The **FMBench Orchestrator** is a tool designed to automate the deployment and management of `FMBench` got benchmarking on Amazon EC2, Amazon SageMaker and Amazon Bedrock. The multiple instances can be of different instance types (so you could run `g6e`, `p4de` and a `trn1` instances via the same config file), in different AWS regions and also test multiple `FMBench` config files. This orchestrator automates the creation of Security Groups, Key Pairs, EC2 instances, runs `FMBench` for a specific config, retrieves the results, and shuts down the instances after completion. Thus it **simplifies the benchmarking process (no more manual creation of SageMaker Notebooks, EC2 instances and cleanup, downloading results folder) and ensures a streamlined and scalable workflow**.
 
 ```
 +---------------------------+
@@ -87,10 +87,10 @@ The **FMBench Orchestrator** is a tool designed to automate the deployment and m
 
 ### Steps to run the orchestrator:
 
-You can either use an existing config file included in this repo, such as [`configs/config.yml`](configs/config.yml) or create your own using the files provided in the [`configs`](configs) directory as a template. Make sure you are in the `fmbench-orchestrator-py311` conda environment.
+You can either use an existing config file included in this repo, such as [`configs/ec2.yml`](configs/ec2.yml) or create your own using the files provided in the [`configs`](configs) directory as a template. Make sure you are in the `fmbench-orchestrator-py311` conda environment. The following command runs benchmarking for the `Llama3-8b` model on an `g6e.2xlarge` and `g6e.4xlarge` instance types.
 
 ```bash
-python main.py --config-file configs/config.yml
+python main.py --config-file configs/ec2.yml
 ```
 
 Once the run is completed you can see the `FMBench` results folder downloaded in the `results` directory under the orchestrator, the `fmbench.log` file is also downloaded from the EC2 instances and placed alongside the results folder.
@@ -107,9 +107,33 @@ Running the scripts above creates a `results` folder under `analytics` which con
 
 See [configuration guide](docs/config_guide.md) for details on the orchestrator config file.
 
-### Benchmark for my instance types and serving containers of interest
+### Benchmark for EC2
 
-Take an existing config file from the [`configs`](configs/) folder, create a copy and edit it as needed. You would typically only need to modify the `instances` section of the config file.
+Take an existing config file from the [`configs`](configs/) folder, create a copy and edit it as needed. You would typically only need to modify the `instances` section of the config file to either modify the instance type and config file or add additional types. For example the following command line benchmarks the `Llama3.1-8b` models on `g6e` EC2 instance types.
+
+```bash
+python main.py --config-file configs/ec2.yml
+```
+
+## Benchmark for SageMaker
+
+You can benchmark any model(s) on Amazon SageMaker by simply pointing the orchestrator to the desired `FMBench` SageMaker config file. The orchestrator will create an EC2 instance and use that for running `FMBench` benchmarking for SageMaker. For example the following command line benchmarks the `Llama3.1-8b` models on `ml.g5` instance types on SageMaker.
+
+```bash
+# provide the name of an S3 bucket in which you want
+# SageMaker to store the model files (for models downloaded
+# from Hugging Face)
+write_bucket=your-bucket-name
+python main.py --config-file configs/sagemaker.yml --fmbench-config-file fmbench:llama3.1/8b/config-llama3.1-8b-g5.yml --write-bucket $write_bucket
+```
+
+## Benchmark for Bedrock
+
+You can benchmark any model(s) on Amazon Bedrock by simply pointing the orchestrator to the desired `FMBench` SageMaker config file. The orchestrator will create an EC2 instance and use that for running `FMBench` benchmarking for Bedrock.  For example the following command line benchmarks the `Llama3.1` models on Bedrock.
+
+```bash
+python main.py --config-file configs/bedrock.yml --fmbench-config-file fmbench:bedrock/config-bedrock-llama3-1-no-streaming.yml
+```
 
 ### Use an existing `FMBench` config file but modify it slightly for my requirements
 

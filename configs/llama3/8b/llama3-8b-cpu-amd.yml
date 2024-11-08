@@ -77,43 +77,27 @@ key_pair_gen:
 
 # Take the below as list of dict as there might be 2 instances with the same AMI
 
+defaults: &ec2_amd_settings
+  region: {{region}}
+  ami_id: {{cpu}}
+  device_name: /dev/xvda
+  ebs_del_on_termination: True
+  ebs_Iops: 16000
+  ebs_VolumeSize: 250
+  ebs_VolumeType: gp3
+  startup_script: startup_scripts/cpu_al2023_startup.txt
+  post_startup_script: post_startup_scripts/fmbench.txt
+  # Timeout period in Seconds before a run is stopped
+  fmbench_complete_timeout: 2400
+
 instances:
 - instance_type: m7a.24xlarge
-  region: {{region}}
-  ami_id: {{cpu}}
-  device_name: /dev/xvda
-  ebs_del_on_termination: True
-  ebs_Iops: 16000
-  ebs_VolumeSize: 250
-  ebs_VolumeType: gp3
-  startup_script: startup_scripts/cpu_al2023_startup.txt
-  post_startup_script: post_startup_scripts/fmbench.txt
-  # Timeout period in Seconds before a run is stopped
-  fmbench_complete_timeout: 2400
+  <<: *ec2_amd_settings
   fmbench_config: 
   - fmbench:llama3/8b/config-ec2-llama3-8b-m7a-24xlarge.yml
-  upload_files:
-   - local: byo_dataset/custom.jsonl
-     remote: /tmp
-   - local: analytics/pricing.yml
-     remote: /tmp
 
 - instance_type: m7a.16xlarge
-  region: {{region}}
-  ami_id: {{cpu}}
-  device_name: /dev/xvda
-  ebs_del_on_termination: True
-  ebs_Iops: 16000
-  ebs_VolumeSize: 250
-  ebs_VolumeType: gp3
-  startup_script: startup_scripts/cpu_al2023_startup.txt
-  post_startup_script: post_startup_scripts/fmbench.txt
-  # Timeout period in Seconds before a run is stopped
-  fmbench_complete_timeout: 2400
+  <<: *ec2_amd_settings
   fmbench_config: 
   - fmbench:llama3/8b/config-ec2-llama3-8b-m7a-16xlarge.yml
-  upload_files:
-   - local: byo_dataset/custom.jsonl
-     remote: /tmp
-   - local: analytics/pricing.yml
-     remote: /tmp
+

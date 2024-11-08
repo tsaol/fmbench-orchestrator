@@ -1,6 +1,6 @@
 # general configuration applicable to the entire app
 general:
-  name: llama3b-g6e
+  name: sagemaker
 
 aws:
   # This is the path to the hf token file that contains your custom
@@ -77,8 +77,7 @@ key_pair_gen:
 
 # Take the below as list of dict as there might be 2 instances with the same AMI
 
-instances:
-- instance_type: g6e.2xlarge
+defaults: &ec2_settings
   region: {{region}}
   ami_id: {{gpu}}
   device_name: /dev/sda1
@@ -88,15 +87,11 @@ instances:
   ebs_VolumeType: gp3
   startup_script: startup_scripts/ubuntu_startup.txt
   post_startup_script: post_startup_scripts/fmbench.txt
-  post_startup_script_params:
-   - local_mode: yes
-   - write_bucket: placeholder
   # Timeout period in Seconds before a run is stopped
-  fmbench_complete_timeout: 2400
+  fmbench_complete_timeout: 7200
+
+instances:
+- instance_type: m7a.xlarge
+  <<: *ec2_settings
   fmbench_config: 
-  - fmbench:llama3/8b/config-ec2-llama3-8b-g6e-2xlarge.yml
-  upload_files:
-   - local: byo_dataset/custom.jsonl
-     remote: /tmp/fmbench-read/source_data/
-   - local: analytics/pricing.yml
-     remote: /tmp/fmbench-read/configs/
+  - {{config_file}}

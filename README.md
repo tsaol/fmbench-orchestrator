@@ -73,17 +73,27 @@ The **FMBench Orchestrator** is a tool designed to automate the deployment and m
     conda create --name fmbench-orchestrator-py311 python=3.11 -y
     ```
 
-2. **Activate the Environment**:
+1. **Activate the Environment**:
 
     ```bash
     conda activate fmbench-orchestrator-py311
     ```
 
-3. **Install Required Packages**:
+1. **Install Required Packages**:
 
     ```bash
     pip install -r requirements.txt
     ```
+
+1. **Hugging Face token**:
+
+   Most models and tokenizers are downloaded from Hugging Face, to enable this place your Hugging Face token in `/tmp/hf_token.txt`.
+
+   ```bash
+   # replace with your Hugging Face token
+   hf_token=your-hugging-face-token
+   echo $hf_token > /tmp/hf_token.txt
+   ```
 
 ### Steps to run the orchestrator:
 

@@ -166,22 +166,12 @@ python main.py --config-file configs/bedrock.yml --fmbench-config-file fmbench:b
 
 ### Provide a custom prompt/custom tokenizer for my benchmarking test
 
-The `instances` section has an `upload_files` section for each instance where we can provide a list of `local` files and `remote` directory paths to place any custom file on an EC2 instance. This could be a tokenizer.json file, a custom prompt file, or a custom dataset. The example below shows how to upload a custom `pricing.yml` and a custom dataset to an EC2 instance.
+The `instances` section has an `upload_files` section for each instance where we can provide a list of `local` files and `remote` directory paths to place any custom file on an EC2 instance. This could be a `tokenizer.json` file, a custom prompt file, or a custom dataset. The example below shows how to upload a custom `pricing.yml` and a custom dataset to an EC2 instance.
 
 ```{.bashrc}
 instances:
 - instance_type: g6e.2xlarge
-  region: {{region}}
-  ami_id: {{gpu}}
-  device_name: /dev/sda1
-  ebs_del_on_termination: True
-  ebs_Iops: 16000
-  ebs_VolumeSize: 250
-  ebs_VolumeType: gp3
-  startup_script: startup_scripts/ubuntu_startup.txt
-  post_startup_script: post_startup_scripts/fmbench.txt
-  # Timeout period in Seconds before a run is stopped
-  fmbench_complete_timeout: 2400
+  <<: *ec2_settings
   fmbench_config: 
   - fmbench:llama3/8b/config-ec2-llama3-8b-g6e-2xlarge.yml
   upload_files:

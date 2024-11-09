@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Optional, List, Dict
 
 # Define constants
+FMBENCH_PACKAGE_NAME: str = "fmbench"
 remote_script_path: str = "/home/{username}/run_fmbench.sh"
 YAML_FILE_PATH: str = "config.yml"
 DEFAULT_EC2_USERNAME: str = "ec2-user"

@@ -1,4 +1,5 @@
 import os
+import re
 import time
 import json
 import wget
@@ -26,6 +27,17 @@ logger = logging.getLogger(__name__)
 
 executor = ThreadPoolExecutor()
 
+def _get_latest_version(package_name: str) -> Optional[str]:
+    url = f"https://pypi.org/pypi/{package_name}/json"
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        data = response.json()
+        version = data["info"]["version"]
+    else:
+        logger.info(f"package '{package_name}' not found on PyPI.")
+        version = None
+    return version
 
 def get_region() -> str:
     """
@@ -61,30 +73,6 @@ def get_region() -> str:
         logger.error(f"Could not fetch the region: {e}")
         region_name = None
     return region_name
-
-
-def _get_ami_id(instance_type: str, instance_region: str, ami_mapping: Dict) -> Optional[str]:
-    """
-    Retrieve the AMI ID for a given instance type and region.
-
-    Args:
-        instance_type (str): The type of the instance.
-        instance_region (str): The region where the instance is located.
-        ami_mapping (Dict): A mapping of regions to AMI IDs.
-
-    Returns:
-        Optional[str]: The AMI ID if found, otherwise None.
-    """
-    try:
-        ami_id: Optional[str] = None
-        ami_type = AMI_TYPE.NEURON if IS_NEURON_INSTANCE(instance_type) else AMI_TYPE.GPU
-        ami_id = ami_mapping.get(instance_region).get(ami_type)
-    except Exception as e:
-        logger.error(f"Error occurred while fetching the AMI id: {e}")
-        ami_id=None
-    return ami_id
-
-import re
 
 def _normalize_yaml_param_spacing(template_content: str, variable_name: str) -> str:
     """
@@ -434,7 +422,8 @@ def create_ec2_instance(
             TagSpecifications=[
                 {
                     "ResourceType": "instance",
-                    "Tags": [{"Key": "Name", "Value": instance_name}],
+                    "Tags": [{"Key": "Name", "Value": instance_name},
+                             {"Key": "fmbench-version", "Value": _get_latest_version(FMBENCH_PACKAGE_NAME)}],
                 }
             ],
         )

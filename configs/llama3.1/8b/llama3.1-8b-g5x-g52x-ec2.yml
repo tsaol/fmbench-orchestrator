@@ -1,0 +1,104 @@
+# general configuration applicable to the entire app
+general:
+  name: llama3.1-8b-g5x-g52x-ec2
+
+aws:
+  # This is the path to the hf token file that contains your custom
+  # hf token
+  hf_token_fpath: /tmp/hf_token.txt
+  # AWS region, this parameter is templatized, no need to change
+  region: {{region}}
+  
+# steps to run the fmbench orchestration
+# test. If all steps are set to yes, the security
+# group will be greated, the keys will be generated at 
+# instance creation, EC2 instances will be created, 
+# the FMBench orchestration test will run and then at the 
+# end the infrastructure (in this case EC2 instances) will
+# be deleted.
+# All results are stored in the local results directory at the end of the
+# FMBench orchestration test.
+run_steps:
+  security_group_creation: yes
+  key_pair_generation: yes
+  deploy_ec2_instance: yes
+  create_iam_role: no
+  run_bash_script: yes
+  delete_ec2_instance: no
+
+security_group:
+  group_name: fmbench_orchestrator_sg
+  description: MultiDeploy EC2 Security Group
+  # If VPC Is left empty, boto3 automatically gets the default VPC for your region
+  # If your current region does not have an active default VPC set up, set it up manually
+  # following the steps here: https://docs.aws.amazon.com/vpc/latest/userguide/work-with-default-vpc.html#create-default-vpc
+  vpc_id:
+
+
+key_pair_gen:
+  #Need to change this name to something better?
+  # This assumes that if key_pair_generation is false, you have the key pair stored in the root.
+  # If so, change the file name to your KP name and the script will pick it up.
+  key_pair_name: fmbench_orchestrator_key_pair-{{region}}
+
+#Instance follows the format below.
+#   instance_id: {instance_id_here} if Instance_id, then you need to bring your own private key
+#   private_key_fname: key_pair/fmbench_orchestrator_1-us-east-1
+#                   OR
+# - instance_type: {instance_name_here} 
+#   region: {region_here}
+#   ami_id: {ami_id_here}
+#   device_name: /dev/sda1
+#   ebs_del_on_termination: True | False
+#   ebs_Iops: 16000
+#   ebs_VolumeSize: {Volume_Size_Here}
+#   ebs_VolumeType: {Volume_type_Here}
+#   #Defaults to none, You can use either Reservation Id ARN or both  (The below 3 fields are optional)
+#   CapacityReservationPreference: open | none 
+#   CapacityReservationId: {The ID of the Capacity Reservation in which to run the instance.}
+#   CapacityReservationResourceGroupArn: {The ARN of the Capacity Reservation resource group in which to run the instance.}
+
+### REQUIRED WITH ABOVE:
+#   startup_script: startup_scripts/gpu_ubuntu_startup.txt
+#   post_startup_script: post_startup_scripts/fmbench.txt
+#   fmbench_config: https://raw.githubusercontent.com/dheerajoruganty/multi-deploy-ec2/refs/heads/main/configs/config-ec2-llama3-8b.yml
+
+### OPTIONAL:
+#   fmbench_llm_tokenizer_fpath: fmbench_llm_utils/tokenizer.json
+#   fmbench_llm_config_fpath: fmbench_llm_utils/config.json
+#   fmbench_tokenizer_remote_dir: /tmp/fmbench-read/llama3_tokenizer/
+#   # Timeout period in Seconds before a run is stopped
+#   fmbench_complete_timeout: 1200
+
+## US-EAST-1 Mapping:
+# Neuron AMI : ami-05d498302130f9036
+# DeepLearning AMI AL2 : ami-07f302d2a74e2b584
+# Al2 AMI, CPU bench : ami-0e54eba7c51c234f6
+
+defaults: &ec2_settings
+  region: {{region}}
+  ami_id: {{gpu}}
+  device_name: /dev/sda1
+  ebs_del_on_termination: True
+  ebs_Iops: 16000
+  ebs_VolumeSize: 250
+  ebs_VolumeType: gp3
+  startup_script: startup_scripts/ubuntu_startup.txt
+  post_startup_script: post_startup_scripts/fmbench.txt
+  # Timeout period in Seconds before a run is stopped
+  fmbench_complete_timeout: 2400
+  
+instances:
+- instance_type: g5.xlarge
+  deploy: yes
+  <<: *ec2_settings
+  fmbench_config: 
+  - fmbench:llama3.1/8b/config-llama3.1-8b-g5.xl-tp-1-mc-max-ec2-conc-1-2.yml
+
+- instance_type: g5.2xlarge
+  deploy: yes
+  <<: *ec2_settings
+  fmbench_config: 
+  - fmbench:llama3.1/8b/config-llama3.1-8b-g5.2xl-tp-1-mc-max-ec2-conc-1-2.yml
+
+

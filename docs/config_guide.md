@@ -2,18 +2,29 @@
 # `FMBench` orchestrator configuration guide
 
 ## Overview
+
+The orchestrator uses multiple config files, these are:
+
+- **config.yml**: this is the main configuration file and this is the one you would create/modify for individual runs. This contains parameters for EC2 instances to use for benchmarking and which `FMBench` config files to use. For an example, see [`ec2.yml](../configs/ec2.yml). This file contains parameters that you would typically need to change.
+
+- **infra.yml**: this file contains infrastructure and orchestration related parameters, you would most likely never need to change contents of this file. For an example, see [`infra.yml`](../configs/infra.yml).
+
+- **ami_mapping.yml**: this file contains the AMIs to be used for a given instance type i.e. a GPU, CPU or AWS Chips (Trainium, Inferentia) for a given region. Unless you are using a custom AMI you do not need to modify this file.
+
 This configuration file is used to manage the deployment and orchestration of multiple EC2 instances for running `FMBench` benchmarks. The file defines various parameters, including AWS settings, run steps, security group settings, key pair management, and instance-specific configurations. This guide explains the purpose of each section and provides details on how to customize the file according to your requirements.
 
-## Configuration Sections
+## Configuration files
 
-### AWS Settings
+### `infra.yml`
+
+#### AWS Settings
 
 This section contains the basic settings required to interact with AWS services.
 
 - `region`: Unless you want to specify a region explicitly, this is always set to `{{region}}` which gets replaced with the current region of the EC2 VM on which the orchestrator is being run. The `region` parameter can also be specified with each instance in the `instances` section, if specified in the `instances` section then that value would override the value in this section. This allows for launching instances in a region different from the region in which the orchestrator is running.
 - `hf_token_fpath`: Your Hugging Face token for accessing specific resources or APIs. Always set to `/tmp/hf_token.txt` unless you want to store the token in a different path.
 
-### Run Steps
+#### Run Steps
 
 Defines the various steps in the orchestration process. Set each step to `yes` or `no` based on whether you want that step to be executed.
 
@@ -22,7 +33,7 @@ Defines the various steps in the orchestration process. Set each step to `yes` o
 - `deploy_ec2_instance`: Whether to deploy the EC2 instances as specified in the `instances` section.
 - `delete_ec2_instance`: Whether to terminate the EC2 instances after completing the benchmarks.
 
-### Security Group
+#### Security Group
 
 This section configures the security group settings for the EC2 instances. You would typically not need to change anything in this section from what is specified in the [default config file](configs/config.yml).
 
@@ -30,14 +41,16 @@ This section configures the security group settings for the EC2 instances. You w
 - `description`: A brief description of the security group, such as "MultiDeploy EC2 Security Group."
 - `vpc_id`: The VPC ID where the security group will be created. Leave this blank to use the default VPC.
 
-### Key Pair Management
+#### Key Pair Management
 
 Manages the SSH key pair used for accessing the EC2 instances. You would typically not need to change anything in this section from what is specified in the [default config file](configs/config.yml).
 
 - `key_pair_name`: Name of the key pair to be created or used. If `key_pair_generation` is set to `no`, ensure this matches the name of an existing key pair.
 - `key_pair_fpath`: The file path where the key pair file (`.pem`) will be stored locally. Update this path if you have an existing key pair.
 
-### Instances
+### `config.yml`
+
+#### Instances
 
 Defines the EC2 instances to be launched for running the benchmarks. This section can contain multiple instance configurations.
 
@@ -58,7 +71,7 @@ Defines the EC2 instances to be launched for running the benchmarks. This sectio
     ```
 
 
-### Sample instance configuration
+#### Sample instance configuration
 
 The following is an example configuration for deploying a `g6e.2xlarge` instance with GPU AMI (Ubuntu Deep Learning OSS) and startup scripts:
 
@@ -85,6 +98,3 @@ instances:
     remote: /tmp
 ```
 
-## Cleaning Up
-
-Cleanup is done automatically. But if you select **no** in config, you would have to manually terminate the instances from EC2 console.

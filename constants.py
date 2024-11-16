@@ -1,3 +1,4 @@
+import os
 from enum import Enum
 from typing import Optional, List, Dict
 
@@ -39,7 +40,7 @@ MAX_INSTANCE_COUNT: int = 1
 # user provides it in the model config to get the AMI mapping and launch the specific
 # instance accordingly.
 AMI_MAPPING_FNAME: str = 'ami_mapping.yml'
-
+INFRA_YML_FPATH: str = os.path.join("configs", "infra.yml")
 # FMBench results file path
 FMBENCH_RESULTS_FOLDER_PATTERN: str = "$HOME/results-*"
 

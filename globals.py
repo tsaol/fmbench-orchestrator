@@ -307,7 +307,8 @@ def get_key_pair(region):
         else:
             # If the key pair file doesn't exist, create a new key pair
             try:
-                private_key = create_key_pair(key_pair_name, region)
+                delete_key_pair_if_present: bool = True
+                private_key = create_key_pair(key_pair_name, region, delete_key_pair_if_present)
                 # Save the key pair to the file
                 with open(private_key_fname, "w") as key_file:
                     key_file.write(private_key)

@@ -22,7 +22,6 @@ run_steps:
   security_group_creation: yes
   key_pair_generation: yes
   deploy_ec2_instance: yes
-  create_iam_role: no
   run_bash_script: yes
   delete_ec2_instance: yes
 

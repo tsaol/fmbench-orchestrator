@@ -20,7 +20,6 @@ Defines the various steps in the orchestration process. Set each step to `yes` o
 - `security_group_creation`: Whether to create a new security group for the EC2 instances. Set to `yes` to create a new security group or `no` to use an existing one.
 - `key_pair_generation`: Whether to generate a new key pair for accessing the EC2 instances. If set to `no`, ensure you have an existing key pair available.
 - `deploy_ec2_instance`: Whether to deploy the EC2 instances as specified in the `instances` section.
-- `run_bash_script`: Whether to run a startup script on each EC2 instance after deployment.
 - `delete_ec2_instance`: Whether to terminate the EC2 instances after completing the benchmarks.
 
 ### Security Group

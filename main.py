@@ -221,6 +221,13 @@ if __name__ == "__main__":
         required=False
     )
     parser.add_argument(
+        "--infra-config-file",
+        type=str,
+        default=INFRA_YML_FPATH,
+        help=f"Config file to use with AWS infrastructure, default={INFRA_YML_FPATH}",
+        required=False
+    )
+    parser.add_argument(
         "--write-bucket",
         type=str,
         help="S3 bucket to store model files for benchmarking on SageMaker",
@@ -233,6 +240,7 @@ if __name__ == "__main__":
     globals.config_data = load_yaml_file(args.config_file,
                                          args.ami_mapping_file,
                                          args.fmbench_config_file,
+                                         args.infra_config_file,
                                          args.write_bucket)
     logger.info(f"Loaded Config {json.dumps(globals.config_data, indent=2)}")
 
@@ -255,20 +263,10 @@ if __name__ == "__main__":
 
     logger.info(f"Deploying Ec2 Instances")
     if globals.config_data["run_steps"]["deploy_ec2_instance"]:
-
-        if globals.config_data["run_steps"]["create_iam_role"]:
-            try:
-                iam_arn = create_iam_instance_profile_arn()
-            except Exception as e:
-                logger.error(f"Cannot create IAM Role due to exception {e}")
-                logger.info("Going to get iam role from the current instance")
-                iam_arn = get_iam_role()
-
-        else:
-            try:
-                iam_arn = get_iam_role()
-            except Exception as e:
-                logger.error(f"Cannot get IAM Role due to exception {e}")
+        try:
+            iam_arn = get_iam_role()
+        except Exception as e:
+            logger.error(f"Cannot get IAM Role due to exception {e}")
 
         if not iam_arn:
             raise NoCredentialsError(
@@ -419,9 +417,8 @@ if __name__ == "__main__":
     )
     time.sleep(sleep_time)
 
-    if globals.config_data["run_steps"]["run_bash_script"]:
-        instance_details = generate_instance_details(
-            instance_id_list, instance_data_map
-        )  # Call the async function
-        asyncio.run(main())
+    instance_details = generate_instance_details(
+        instance_id_list, instance_data_map
+    )  # Call the async function
+    asyncio.run(main())
     logger.info("all done")

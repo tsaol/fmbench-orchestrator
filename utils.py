@@ -18,7 +18,7 @@ from pathlib import Path
 from scp import SCPClient
 from jinja2 import Template
 from collections import defaultdict
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Any
 from concurrent.futures import ThreadPoolExecutor
 from botocore.exceptions import NoCredentialsError, ClientError
 
@@ -94,9 +94,35 @@ def _normalize_yaml_param_spacing(template_content: str, variable_name: str) -> 
     return normalized_content
 
 
+def _get_rendered_yaml(config_file_path: str, **context: Any) -> str:
+    logger.info(f"config_file_path={config_file_path}")
+    # read the yml file as raw text
+    template_content = Path(config_file_path).read_text()
+
+    # Normalize the spacing, so {{ gpu }} and {{ gpu}} etc all get converted
+    # to {{gpu}}
+    for param in ['gpu', 'cpu', 'neuron']:
+        template_content = _normalize_yaml_param_spacing(template_content, param)
+
+    # context contains region, config file etc.
+    # context = {'region': global_region, 'config_file': fmbench_config_file, 'write_bucket': write_bucket}
+
+    # First rendering to substitute 'region' and 'config_file'
+    # if the {{config_file}} placeholder does not exist in the config.yml
+    # then the 'config_file' key in the 'context' dict does not do anything
+    # if the {{config_file}} placeholder does indeed exist then it will get
+    # replaced with the value in the context dict, if however the user did not
+    # provide the value as a command line argument to the orchestrator then it
+    # would get replaced by None and we would have no fmbench config file and the 
+    # code would raise an exception that it cannot continue
+    template = Template(template_content)
+    rendered_yaml = template.render(context)
+    return rendered_yaml
+
 def load_yaml_file(config_file_path: str,
                    ami_mapping_file_path: str,
                    fmbench_config_file: Optional[str],
+                   infra_config_file: str,
                    write_bucket: Optional[str]) -> Optional[Dict]:
     """
     Load and parse a YAML file using Jinja2 templating for region and AMI ID substitution.
@@ -108,38 +134,28 @@ def load_yaml_file(config_file_path: str,
         Optional[Dict]: Parsed content of the YAML file as a dictionary with region and AMI mapping information
                         substituted, or None if an error occurs.
     """
-   
-    if Path(config_file_path).is_file() is False:
-        logger.error(f"{config_file_path} not found, cannot continue")
-        raise FileNotFoundError(f"file '{config_file_path}' does not exist.")
-    
-    if Path(ami_mapping_file_path).is_file() is False:
-        logger.error(f"{ami_mapping_file_path} not found, cannot continue")
-        raise FileNotFoundError(f"file '{ami_mapping_file_path}' does not exist.")
-    
-    template_content = Path(config_file_path).read_text()
-    # Normalize the spacing, so {{ gpu }} and {{ gpu}} etc all get converted
-    # to {{gpu}}
-    for param in ['gpu', 'cpu', 'neuron']:
-        template_content = _normalize_yaml_param_spacing(template_content, param)
 
+    # mandatory files should be present
+    for f in [config_file_path, ami_mapping_file_path, infra_config_file]:
+        if Path(f).is_file() is False:
+            logger.error(f"{f} not found, cannot continue")
+            raise FileNotFoundError(f"file '{f}' does not exist.")
+    
     # Get the global region where this orchestrator is running
     # Initial context with 'region'
     global_region = get_region()
     context = {'region': global_region, 'config_file': fmbench_config_file, 'write_bucket': write_bucket}
-    # First rendering to substitute 'region' and 'config_file'
-    # if the {{config_file}} placeholder does not exist in the config.yml
-    # then the 'config_file' key in the 'context' dict does not do anything
-    # if the {{config_file}} placeholder does indeed exist then it will get
-    # replaced with the value in the context dict, if however the user did not
-    # provide the value as a command line argument to the orchestrator then it
-    # would get replaced by None and we would have no fmbench config file and the 
-    # code would raise an exception that it cannot continue
-    template = Template(template_content)
-    rendered_yaml = template.render(context)
 
+    rendered_yaml = _get_rendered_yaml(config_file_path)
     # yaml to json
     config_data = yaml.safe_load(rendered_yaml)
+
+    rendered_yaml = _get_rendered_yaml(infra_config_file)
+    # yaml to json
+    infra_config_data = yaml.safe_load(rendered_yaml)
+
+    # merge the two configs
+    config_data = config_data | infra_config_data
 
     # Fetch the AMI mapping file
     ami_mapping =  yaml.safe_load(Path(ami_mapping_file_path).read_text())
@@ -311,7 +327,7 @@ def authorize_inbound_rules(security_group_id: str, region: str):
             logger.error(f"Error authorizing inbound rules: {e}")
 
 
-def create_key_pair(key_name: str, region: str) -> str:
+def create_key_pair(key_name: str, region: str, delete_key_pair_if_present: bool) -> str:
     """
     Create a new key pair for EC2 instances.
 
@@ -325,6 +341,21 @@ def create_key_pair(key_name: str, region: str) -> str:
     try:
         # Initialize the EC2 client
         ec2_client = boto3.client("ec2", region_name=region)
+        # check if key pair exists
+        kp_exists: bool = False
+        kp_list_response = ec2_client.describe_key_pairs(KeyNames=[])
+        for kp in kp_list_response['KeyPairs']:
+            if kp['KeyName'] == key_name:
+                kp_exists = True
+                break
+        if kp_exists is True:
+            if delete_key_pair_if_present is True:
+                logger.info(f"key pair {key_name} does exist, going to delete it now")
+                ec2_client.delete_key_pair(KeyName=key_name)
+            else:
+                logger.error(f"key pair {key_name} already exists but delete_key_pair_if_present={delete_key_pair_if_present}, cannot continue")
+        else:
+            logger.info(f"key pair {key_name} does not exist, going to create it now")
         key_material: Optional[str] = None
         # Create a key pair
         response = ec2_client.create_key_pair(KeyName=key_name)

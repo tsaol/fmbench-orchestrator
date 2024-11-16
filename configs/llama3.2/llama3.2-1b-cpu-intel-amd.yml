@@ -1,6 +1,6 @@
 # general configuration applicable to the entire app
 general:
-  name: llama3.2-cpu
+  name: llama3.2-1b-cpu
 
 aws:
   # This is the path to the hf token file that contains your custom
@@ -87,7 +87,7 @@ defaults: &cpu_settings
   startup_script: startup_scripts/cpu_al2023_startup.txt
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
-  fmbench_complete_timeout: 2600
+  fmbench_complete_timeout: 3600
 
 instances:
 - instance_type: m5.16xlarge

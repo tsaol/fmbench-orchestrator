@@ -46,7 +46,7 @@ FMBENCH_RESULTS_FOLDER_PATTERN: str = "$HOME/results-*"
 # flag related variables
 STARTUP_COMPLETE_FLAG_FPATH: str = "/tmp/startup_complete.flag"
 FMBENCH_TEST_COMPLETE_FLAG_FPATH: str = "/tmp/fmbench_completed.flag"
-MAX_WAIT_TIME_FOR_STARTUP_SCRIPT_IN_SECONDS: int = 1200
+MAX_WAIT_TIME_FOR_STARTUP_SCRIPT_IN_SECONDS: int = 1500
 SCRIPT_CHECK_INTERVAL_IN_SECONDS: int = 60
 FMBENCH_LOG_PATH: str = "~/fmbench.log"
 FMBENCH_LOG_REMOTE_PATH: str = "/home/{username}/fmbench.log"

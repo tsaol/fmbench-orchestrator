@@ -90,23 +90,23 @@ defaults: &cpu_settings
   fmbench_complete_timeout: 2600
 
 instances:
-- instance_id: m5.16xlarge
+- instance_type: m5.16xlarge
   <<: *cpu_settings
   fmbench_config: 
-  - fmbench:llama3.2/config-llama3.2-1b-m5-16xlarge-ec2.yml
+  - fmbench:llama3.2/1b/config-llama3.2-1b-m5-16xlarge-ec2.yml
 
 - instance_type: m7a.16xlarge
   <<: *cpu_settings
   fmbench_config: 
-  - fmbench:llama3.2/config-llama3.2-1b-m7a-16xlarge-ec2.yml
+  - fmbench:llama3.2/1b/config-llama3.2-1b-m7a-16xlarge-ec2.yml
 
 - instance_type: m7a.24xlarge
   <<: *cpu_settings
   fmbench_config: 
-  - fmbench:llama3.2/config-llama3.2-1b-m7a-24xlarge-ec2.yml
+  - fmbench:llama3.2/1b/config-llama3.2-1b-m7a-24xlarge-ec2.yml
 
 - instance_type: m7i.12xlarge
   <<: *cpu_settings
   fmbench_config: 
-  - fmbench:llama3.2/config-llama3.2-1b-m7i-12xlarge-ec2
+  - fmbench:llama3.2/1b/config-llama3.2-1b-m7i-12xlarge-ec2.yml
 

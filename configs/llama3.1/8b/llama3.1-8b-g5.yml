@@ -24,7 +24,7 @@ run_steps:
   deploy_ec2_instance: yes
   create_iam_role: no
   run_bash_script: yes
-  delete_ec2_instance: no
+  delete_ec2_instance: yes
 
 security_group:
   group_name: fmbench_orchestrator_sg
@@ -38,7 +38,7 @@ security_group:
 key_pair_gen:
   # This assumes that if key_pair_generation is false, you have the key pair stored in the root.
   # If so, change the file name to your KP name and the script will pick it up.
-  key_pair_name: fmbench_orchestrator_key_pair-{{region}}
+  key_pair_name: fmbench_orchestrator_key_pair
 
 defaults: &ec2_settings
   region: {{region}}

@@ -23,19 +23,16 @@ instances:
   - fmbench:llama3.2/1b/config-llama3.2-1b-m5-16xlarge-ec2.yml
 
 - instance_type: m7a.16xlarge
-  deploy: no
   <<: *cpu_settings
   fmbench_config: 
   - fmbench:llama3.2/1b/config-llama3.2-1b-m7a-16xlarge-ec2.yml
 
 - instance_type: m7a.24xlarge
-  deploy: no
   <<: *cpu_settings
   fmbench_config: 
   - fmbench:llama3.2/1b/config-llama3.2-1b-m7a-24xlarge-ec2.yml
 
 - instance_type: m7i.12xlarge
-  deploy: no
   <<: *cpu_settings
   fmbench_config: 
   - fmbench:llama3.2/1b/config-llama3.2-1b-m7i-12xlarge-ec2.yml

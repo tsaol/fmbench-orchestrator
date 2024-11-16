@@ -58,7 +58,8 @@ Name it something like ```fmbench-orchestrator-permissions```
                 "Effect": "Allow",
                 "Action": [
                     "ec2:CreateKeyPair",
-                    "ec2:DescribeKeyPairs"
+                    "ec2:DescribeKeyPairs",
+                    "ec2:DeleteKeyPair"
                 ],
                 "Resource": "*"
             },

@@ -99,6 +99,8 @@ The **FMBench Orchestrator** is a tool designed to automate the deployment and m
 
 You can either use an existing config file included in this repo, such as [`configs/ec2.yml`](configs/ec2.yml) or create your own using the files provided in the [`configs`](configs) directory as a template. Make sure you are in the `fmbench-orchestrator-py311` conda environment. The following command runs benchmarking for the `Llama3-8b` model on an `g6e.2xlarge` and `g6e.4xlarge` instance types.
 
+The following command runs benchmarking on an EC2 instance, see [Benchmark for SageMaker](#benchmark-for-sagemaker) for benchmarking on SageMaker and [Benchmark for Bedrock](#benchmark-for-bedrock) for benchmarking on Bedrock.
+
 ```bash
 python main.py --config-file configs/ec2.yml
 ```

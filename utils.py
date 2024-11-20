@@ -94,7 +94,7 @@ def _normalize_yaml_param_spacing(template_content: str, variable_name: str) -> 
     return normalized_content
 
 
-def _get_rendered_yaml(config_file_path: str, **context: Any) -> str:
+def _get_rendered_yaml(config_file_path: str, context: Dict) -> str:
     logger.info(f"config_file_path={config_file_path}")
     # read the yml file as raw text
     template_content = Path(config_file_path).read_text()
@@ -146,11 +146,11 @@ def load_yaml_file(config_file_path: str,
     global_region = get_region()
     context = {'region': global_region, 'config_file': fmbench_config_file, 'write_bucket': write_bucket}
 
-    rendered_yaml = _get_rendered_yaml(config_file_path)
+    rendered_yaml = _get_rendered_yaml(config_file_path, context)
     # yaml to json
     config_data = yaml.safe_load(rendered_yaml)
 
-    rendered_yaml = _get_rendered_yaml(infra_config_file)
+    rendered_yaml = _get_rendered_yaml(infra_config_file, context)
     # yaml to json
     infra_config_data = yaml.safe_load(rendered_yaml)
 

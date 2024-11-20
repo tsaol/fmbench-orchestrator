@@ -24,4 +24,4 @@ us-west-1:
 us-west-2:
   neuron: ami-084d4a2de05b27a18
   gpu: ami-0ed0fd5212e1c579b
-  cpu: ami-06b21ccaeff8cd686
+  cpu: ami-046b5b8111c19b3ac

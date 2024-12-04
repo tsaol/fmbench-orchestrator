@@ -132,3 +132,4 @@ Add these policies to the IAM role you just created.
 1. AmazonBedrockFullAccess
 1. AmazonS3FullAccess
 1. AmazonSageMakerFullAccess
+1. AWSPriceListServiceFullAccess

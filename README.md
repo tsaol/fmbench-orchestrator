@@ -144,7 +144,7 @@ You can benchmark any model(s) on Amazon SageMaker by simply pointing the orches
 # SageMaker to store the model files (for models downloaded
 # from Hugging Face)
 write_bucket=your-bucket-name
-python main.py --config-file configs/sagemaker.yml --fmbench-config-file fmbench:llama3.1/8b/config-llama3.1-8b-g5.xl-g5.2xl-sm.yml --write-bucket $write_bucket
+python main.py --config-file configs/sagemaker.yml --fmbench-config-file fmbench:llama3.1/8b/config-llama3.1-8b-g5.2xl-g5.4xl-sm.yml --write-bucket $write_bucket
 ```
 
 ## Benchmark for Bedrock

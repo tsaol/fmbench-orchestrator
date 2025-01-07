@@ -18,7 +18,7 @@ instances:
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 6000
   fmbench_config: 
-  - fmbench:llama3.1/70b/config-llama3-1-70b-g6e.24xl-deploy-ec2.yml
+  - fmbench:llama3.1/70b/config-llama3-1-70b-g6e.24xl-tp-4-mc-max-djl.yml
 
 - instance_type: g6e.48xlarge
   deploy: yes
@@ -34,7 +34,7 @@ instances:
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 6000
   fmbench_config: 
-  - fmbench:llama3.1/70b/config-llama3-1-70b-g6e.48xl-deploy-ec2.yml
+  - fmbench:llama3.1/70b/config-llama3-1-70b-g6e.48xl-tp-8-mc-max-djl.yml
 
 # This is for the g6 instance. The only instance you can deploy a llama3.1 70b on a g6 is g6.48xl
 - instance_type: g6.48xlarge
@@ -51,7 +51,7 @@ instances:
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 6000
   fmbench_config: 
-  - fmbench:llama3.1/70b/config-llama3-1-70b-g6.48xl-deploy-ec2.yml
+  - fmbench:llama3.1/70b/config-llama3-1-70b-g6.48xl-tp-8-mc-max-djl.yml
 
 # This is for the g5 instance. The only instance you can deploy a llama3.1 70b on a g5 is g5.48xl
 - instance_type: g5.48xlarge
@@ -68,7 +68,7 @@ instances:
   # Timeout period in Seconds before a run is stopped
   fmbench_complete_timeout: 6000
   fmbench_config: 
-  - fmbench:llama3.1/70b/config-llama3-1-70b-g5.48xl-deploy-ec2.yml
+  - fmbench:llama3.1/70b/config-llama3-1-70b-g5.48xl-tp-8-mc-max-djl.yml
 
 # This is for a capacity reservation type instance p4de.24xlarge
 - instance_type: p4de.24xlarge

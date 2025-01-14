@@ -1,0 +1,56 @@
+# general configuration applicable to the entire app
+general:
+  name: llama3.1-8b-g5
+
+defaults: &ec2_settings
+  region: {{region}}
+  ami_id: {{gpu}}
+  device_name: /dev/sda1
+  ebs_del_on_termination: True
+  ebs_Iops: 16000
+  ebs_VolumeSize: 250
+  ebs_VolumeType: gp3
+  startup_script: startup_scripts/ubuntu_startup.txt
+  post_startup_script: post_startup_scripts/fmbench.txt
+  # Timeout period in Seconds before a run is stopped
+  fmbench_complete_timeout: 10000
+  
+instances:
+- instance_type: g6e.12xlarge
+  deploy: yes
+  <<: *ec2_settings
+  fmbench_config: 
+  # This is the generic qwen file that can be used for any qwen model on DJL. This includes
+  # NVIDIA GPUs. Users can bring in their own prompt templates, and configure other serving properties
+  # through the additional args parameter. These additional args are then formatted into the generic
+  # config file which is used on that particular instance to benchmark the model of interest.
+  - configs/qwen/fmbench_qwen.yml
+  upload_files:
+  - local: custom_prompt_templates/prompt_template_qwen.txt
+    remote: /tmp/fmbench-read/prompt_template/
+  post_startup_script_params:
+    # Add your additional parameters here based on the model id, the instance type and other parameters that you want to test. All these parameters
+    # will be replaced in the generic config file that is used across different instances (g6e12xlarge, g6e.24xlarge, etc.)
+    additional_args: -A model_id=Qwen/Qwen2.5-72B -A instance_type=g6e.12xlarge -A tp_degree=4 -A batch_size=4 -A results_dir=Qwen2.5-72B-g6e.12xl -A tokenizer_dir=qwen_tokenizer -A prompt_template=prompt_template_qwen.txt -A max_model_len=68832
+- instance_type: g6e.24xlarge
+  deploy: yes
+  <<: *ec2_settings
+  fmbench_config: 
+  - configs/qwen/fmbench_qwen.yml
+  upload_files:
+  - local: custom_prompt_templates/prompt_template_qwen.txt
+    remote: /tmp/fmbench-read/prompt_template/
+  post_startup_script_params:
+    additional_args: -A model_id=Qwen/Qwen2.5-72B -A instance_type=g6e.24xlarge -A tp_degree=4 -A batch_size=4 -A results_dir=Qwen2.5-72B-g6e.24xl -A tokenizer_dir=qwen_tokenizer -A prompt_template=prompt_template_qwen.txt -A max_model_len=68823
+- instance_type: g6e.48xlarge
+  deploy: yes
+  <<: *ec2_settings
+  fmbench_config: 
+  - configs/qwen/fmbench_qwen.yml
+  upload_files:
+  - local: custom_prompt_templates/prompt_template_qwen.txt
+    remote: /tmp/fmbench-read/prompt_template/
+  post_startup_script_params:
+    additional_args: -A model_id=Qwen/Qwen2.5-72B -A instance_type=g6e.48xlarge -A tp_degree=8 -A batch_size=4 -A results_dir=Qwen2.5-72B-g6e.48xl -A tokenizer_dir=qwen_tokenizer -A prompt_template=prompt_template_qwen.txt -A max_model_len=68823
+
+

@@ -181,6 +181,9 @@ instances:
   - local: analytics/pricing.yml
     remote: /tmp/fmbench-read/configs/
 ```
+
+Please see the [custom.jsonl](https://raw.githubusercontent.com/awslabs/fmbench-orchestrator/refs/heads/main/byo_dataset/custom.jsonl) file for data format example. Note that language needs to be set to 'en' to be compatible with the default config files. 
+
 ### Compare the accuracy when predicting on custom dataset
 FMBench-orchestrator supports for evaluating candidate models using Majority Voting with a Panel of LLM Evaluators (PoLL). Before running the experiment, please enable **model access** in Bedrock to the judge models: **Llama3-70b**, **Cohere command-r-v1** and **claude 3 Sonnet**. 
 

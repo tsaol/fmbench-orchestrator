@@ -75,6 +75,10 @@ async def execute_fmbench(instance, post_install_script, remote_script_path):
             instance_name = instance["instance_name"]
             local_mode_param = POST_STARTUP_LOCAL_MODE_VAR
             write_bucket_param = POST_STARTUP_WRITE_BUCKET_VAR
+            # If a user has provided the additional generatic command line arguments, those will
+            # be used in the fmbench --config-file command. Such as the model id, the instance type, 
+            # the serving properties, etc.
+            additional_args = ''
 
             logger.info(
                 f"going to run config {cfg_idx} of {num_configs} for instance {instance_name}"
@@ -86,9 +90,12 @@ async def execute_fmbench(instance, post_install_script, remote_script_path):
 
             # override defaults for post install script params if specified
             pssp = instance.get("post_startup_script_params")
+            logger.info(f"User provided post start up script parameters: {pssp}")
             if pssp is not None:
                 local_mode_param = pssp.get("local_mode", local_mode_param)
                 write_bucket_param = pssp.get("write_bucket", write_bucket_param)
+                additional_args = pssp.get("additional_args", additional_args)
+            logger.info(f"Going to use the additional arguments in the command line: {additional_args}")
 
             # Convert `local_mode_param` to "yes" or "no" if it is a boolean
             if isinstance(local_mode_param, bool):
@@ -101,8 +108,10 @@ async def execute_fmbench(instance, post_install_script, remote_script_path):
                     config_file=remote_config_path,
                     local_mode=local_mode_param,
                     write_bucket=write_bucket_param,
+                    additional_args=additional_args,
                 )
             )
+            logger.info(f"Formatted post startup script: {formatted_script}")
 
             
 

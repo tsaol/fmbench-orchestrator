@@ -29,6 +29,8 @@ instances:
   - local: custom_prompt_templates/prompt_template_qwen.txt
     remote: /tmp/fmbench-read/prompt_template/
   post_startup_script_params:
+    # Add your additional parameters here based on the model id, the instance type and other parameters that you want to test. All these parameters
+    # will be replaced in the generic config file that is used across different instances (g6e12xlarge, g6e.24xlarge, etc.)
     additional_args: -A model_id=Qwen/Qwen2.5-72B -A instance_type=g6e.12xlarge -A tp_degree=4 -A batch_size=4 -A results_dir=Qwen2.5-72B-g6e.12xl -A tokenizer_dir=qwen_tokenizer -A prompt_template=prompt_template_qwen.txt -A max_model_len=68832
 - instance_type: g6e.24xlarge
   deploy: yes

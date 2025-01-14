@@ -13,7 +13,7 @@ defaults: &ec2_settings
   startup_script: startup_scripts/ubuntu_startup.txt
   post_startup_script: post_startup_scripts/fmbench.txt
   # Timeout period in Seconds before a run is stopped
-  fmbench_complete_timeout: 2400
+  fmbench_complete_timeout: 10000
   
 instances:
 - instance_type: g6e.12xlarge
@@ -39,7 +39,7 @@ instances:
   - local: custom_prompt_templates/prompt_template_qwen.txt
     remote: /tmp/fmbench-read/prompt_template/
   post_startup_script_params:
-    additional_args: -A model_id=Qwen/Qwen2.5-72B -A instance_type=g6e.24xlarge -A tp_degree=4 -A batch_size=4 -A results_dir=Qwen2.5-72B-g6e.12xl -A tokenizer_dir=qwen_tokenizer -A prompt_template=prompt_template_qwen.txt -A max_model_len=68823
+    additional_args: -A model_id=Qwen/Qwen2.5-72B -A instance_type=g6e.24xlarge -A tp_degree=4 -A batch_size=4 -A results_dir=Qwen2.5-72B-g6e.24xl -A tokenizer_dir=qwen_tokenizer -A prompt_template=prompt_template_qwen.txt -A max_model_len=68823
 - instance_type: g6e.48xlarge
   deploy: yes
   <<: *ec2_settings
@@ -49,6 +49,6 @@ instances:
   - local: custom_prompt_templates/prompt_template_qwen.txt
     remote: /tmp/fmbench-read/prompt_template/
   post_startup_script_params:
-    additional_args: -A model_id=Qwen/Qwen2.5-72B -A instance_type=g6e.24xlarge -A tp_degree=8 -A batch_size=4 -A results_dir=Qwen2.5-72B-g6e.12xl -A tokenizer_dir=qwen_tokenizer -A prompt_template=prompt_template_qwen.txt -A max_model_len=68823
+    additional_args: -A model_id=Qwen/Qwen2.5-72B -A instance_type=g6e.48xlarge -A tp_degree=8 -A batch_size=4 -A results_dir=Qwen2.5-72B-g6e.48xl -A tokenizer_dir=qwen_tokenizer -A prompt_template=prompt_template_qwen.txt -A max_model_len=68823
 
 

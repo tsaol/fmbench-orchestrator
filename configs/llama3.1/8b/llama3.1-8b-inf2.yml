@@ -1,0 +1,27 @@
+# general configuration applicable to the entire app
+general:
+  name: llama3.1-8b-inf2
+
+defaults: &ec2_settings
+  region: {{region}}
+  ami_id: {{neuron}}
+  device_name: /dev/sda1
+  ebs_del_on_termination: True
+  ebs_Iops: 16000
+  ebs_VolumeSize: 250
+  ebs_VolumeType: gp3
+  startup_script: startup_scripts/ubuntu_startup.txt
+  post_startup_script: post_startup_scripts/fmbench.txt
+  # Timeout period in Seconds before a run is stopped
+  fmbench_complete_timeout: 5000
+  
+instances:
+- instance_type: inf2.24xlarge
+  deploy: yes
+  <<: *ec2_settings
+  fmbench_config: 
+  - configs/fmbench/config-llama3.1-8b-inf2-24xl-ec2.yml
+
+
+
+

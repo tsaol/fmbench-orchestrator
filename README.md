@@ -2,7 +2,7 @@
         <img src="https://github.com/aws-samples/foundation-model-benchmarking-tool/blob/main/img/fmbt-small.png?raw=true" width="25"></img> FMBench Orchestrator
 </h1>
 
-The `FMBench Orchestrator` **automates the LLM benchmarking**. It is built with moduler design where users can plug and play with **any combination** of dataset, models, serving stacks, and benchmark metrics:  
+The `FMBench Orchestrator` **automates the LLM benchmarking**. It is built with modular design where users can plug and play with **any combination** of dataset, models, serving stacks, and benchmark metrics:  
 
 ![Accuracy trajectory with prompt size](docs/img/fmbench_conceptual_modules.png)
 
@@ -11,7 +11,7 @@ Follow the following steps and get your infrastructure cost optimization strateg
 
 #### Prerequisites
 
-- **IAM ROLE**: You need an active AWS account having an **IAM Role** necessary permissions to create, manage, and terminate EC2 instances. See [this](docs/iam.md) link for the permissions and trust policies that this IAM role needs to have. Call this IAM role as `fmbench-orchestrator`.
+- **IAM ROLE**: You need an active AWS account having an **IAM Role**: Need necessary permissions to create, manage, and terminate EC2 instances. See [this](docs/iam.md) link for the permissions and trust policies that this IAM role needs to have. Call this IAM role as `fmbench-orchestrator`.
 
 - **Service quota**: Your AWS account needs to have enough **VCPU quota** to launch the Amazon EC2 instances if your LLM serving stack is EC2. In case you need to request a quota increase, please refer to [this link](https://docs.aws.amazon.com/servicequotas/latest/userguide/request-quota-increase.html). 
 
@@ -121,7 +121,7 @@ instances:
   - fmbench:llama3/8b/config-llama3-8b-g6e.4xl-tp-1-mc-max-djl-ec2.yml
 ```
 
-Note that the  [`fmbench: lama3/8b/config-ec2-llama3-8b-g6e-2xlarge.yml`](https://github.com/aws-samples/foundation-model-benchmarking-tool/blob/main/src/fmbench/configs/llama3/8b/config-ec2-llama3-8b-g6e-2xlarge.yml) and [`fmbench: llama3/8b/config-llama3-8b-g6e.4xl-tp-1-mc-max-djl-ec2.yml`](https://github.com/aws-samples/foundation-model-benchmarking-tool/blob/main/src/fmbench/configs/llama3/8b/config-llama3-8b-g6e.4xl-tp-1-mc-max-djl-ec2.yml) files are default config files provided in the [FMbench repo](https://github.com/aws-samples/foundation-model-benchmarking-tool). FMbench orchestrator use these config to launch EC2 instance and deploy the expements on the launched EC2 instance. 
+Note that the  [`fmbench: lama3/8b/config-ec2-llama3-8b-g6e-2xlarge.yml`](https://github.com/aws-samples/foundation-model-benchmarking-tool/blob/main/src/fmbench/configs/llama3/8b/config-ec2-llama3-8b-g6e-2xlarge.yml) and [`fmbench: llama3/8b/config-llama3-8b-g6e.4xl-tp-1-mc-max-djl-ec2.yml`](https://github.com/aws-samples/foundation-model-benchmarking-tool/blob/main/src/fmbench/configs/llama3/8b/config-llama3-8b-g6e.4xl-tp-1-mc-max-djl-ec2.yml) files are default config files provided in the [FMbench repo](https://github.com/aws-samples/foundation-model-benchmarking-tool). FMbench orchestrator use these config to launch EC2 instance and deploy the experiments on the launched EC2 instance. 
 
 An example of using customized `fmbench` config file is given in the [Compare SageMaker against EC2](#compare-sagemaker-against-ec2) section below. 
 
@@ -187,7 +187,7 @@ Please see the [custom.jsonl](https://raw.githubusercontent.com/awslabs/fmbench-
 ### Compare the accuracy when predicting on custom dataset
 FMBench-orchestrator supports for evaluating candidate models using Majority Voting with a Panel of LLM Evaluators (PoLL). Before running the experiment, please enable **model access** in Bedrock to the judge models: **Llama3-70b**, **Cohere command-r-v1** and **claude 3 Sonnet**. 
 
-First, createa a config file specifying accuracy measurement related info, such as `ground_truth`,  `question_col_key`. You can copy [config-llama3.1-8b-g5.2xl-g5.4xl-sm.yml](https://github.com/aws-samples/foundation-model-benchmarking-tool/blob/e82810862e8dd21e4914d925c4be7bf0be9f6afe/src/fmbench/configs/llama3.1/8b/config-llama3.1-8b-g5.2xl-g5.4xl-sm.yml) as an example, and modify based on your experiment. 
+First, create a config file specifying accuracy measurement related info, such as `ground_truth`,  `question_col_key`. You can copy [config-llama3.1-8b-g5.2xl-g5.4xl-sm.yml](https://github.com/aws-samples/foundation-model-benchmarking-tool/blob/e82810862e8dd21e4914d925c4be7bf0be9f6afe/src/fmbench/configs/llama3.1/8b/config-llama3.1-8b-g5.2xl-g5.4xl-sm.yml) as an example, and modify based on your experiment. 
 
 Here are the parameters to update in this config file:
 
@@ -205,7 +205,7 @@ datasets:
   prompt_template_keys:
   - input
   - context
-  ground_truth_col_key: answers      # The name of the answer filed in your custom data 
+  ground_truth_col_key: answers      # The name of the answer field in your custom data 
   question_col_key: input            # The name of the question field in your custom data 
 
 ```

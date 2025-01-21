@@ -1,6 +1,6 @@
 # general configuration applicable to the entire app
 general:
-  name: llama3.1-8b-g5
+  name: Qwen2.5-72B
 
 defaults: &ec2_settings
   region: {{region}}

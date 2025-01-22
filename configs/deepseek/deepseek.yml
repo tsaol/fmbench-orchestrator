@@ -1,0 +1,34 @@
+# general configuration applicable to the entire app
+general:
+  name: DeepSeek-R1
+
+defaults: &ec2_settings
+  region: {{region}}
+  ami_id: {{gpu}}
+  device_name: /dev/sda1
+  ebs_del_on_termination: True
+  ebs_Iops: 16000
+  ebs_VolumeSize: 250
+  ebs_VolumeType: gp3
+  startup_script: startup_scripts/ubuntu_startup.txt
+  post_startup_script: post_startup_scripts/fmbench.txt
+  # Timeout period in Seconds before a run is stopped
+  fmbench_complete_timeout: 10000
+  
+instances:
+- instance_type: g5.xlarge
+  deploy: yes
+  <<: *ec2_settings
+  fmbench_config: 
+  # This is the generic qwen file that can be used for any qwen model on DJL. This includes
+  # NVIDIA GPUs. Users can bring in their own prompt templates, and configure other serving properties
+  # through the additional args parameter. These additional args are then formatted into the generic
+  # config file which is used on that particular instance to benchmark the model of interest.
+  - configs/deepseek/config-deepseek-r1.yml
+  upload_files:
+  - local: custom_prompt_templates/prompt_template_deepseek.txt
+    remote: /tmp/fmbench-read/prompt_template/
+  post_startup_script_params:
+    # Add your additional parameters here based on the model id, the instance type and other parameters that you want to test. All these parameters
+    # will be replaced in the generic config file that is used across different instances (g6e12xlarge, g6e.24xlarge, etc.)
+    additional_args: -A model_id=deepseek-r1:1.5b -A instance_type=g5.xlarge -A results_dir=deepseek-r1-longbench

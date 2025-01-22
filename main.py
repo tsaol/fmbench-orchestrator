@@ -242,6 +242,12 @@ if __name__ == "__main__":
         help="S3 bucket to store model files for benchmarking on SageMaker",
         required=False
     )
+    parser.add_argument(
+        "--fmbench-latest",
+        type=bool,
+        help="argument to check if the user wants to make a new build of the fmbench package and then use the orchestrator.",
+        required=False
+    )
 
     args = parser.parse_args()
     logger.info(f"main, {args} = args")
@@ -318,6 +324,9 @@ if __name__ == "__main__":
                 # Replace the hf token in the bash script to pull the HF model
                 user_data_script = user_data_script.replace("__HF_TOKEN__", hf_token)
                 user_data_script = user_data_script.replace("__neuron__", "True")
+                logger.info(f"FMBench latest is set to {args.fmbench_latest}")
+                user_data_script = user_data_script.replace("__fmbench_latest__", str(args.fmbench_latest))
+                logger.info(f"User data script: {user_data_script}")
 
             if instance.get("instance_id") is None:
                 instance_type = instance["instance_type"]

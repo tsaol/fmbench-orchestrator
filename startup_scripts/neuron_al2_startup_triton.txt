@@ -22,7 +22,30 @@ rm ~/Miniconda3-latest-Linux-x86_64.sh
 ~/miniconda3/bin/conda create --name fmbench_python311 -y python=3.11 ipykernel
 # Activate the environment and install fmbench
 source ~/miniconda3/bin/activate fmbench_python311
-pip install -U fmbench
+
+# Set the flag for latest version
+fmbench_latest="__fmbench_latest__"  # You can set this to "False" to use pip install
+
+# Conditional installation based on fmbench_latest flag
+if [ "$fmbench_latest" = "True" ]; then
+    # Install poetry
+    pip install poetry
+    
+    # Clone the repository
+    git clone https://github.com/aws-samples/foundation-model-benchmarking-tool.git
+    
+    # Change to the repository directory
+    cd foundation-model-benchmarking-tool
+    
+    # Build using poetry
+    poetry build
+    
+    # Install the built package
+    pip install dist/*.whl
+else
+    # Install fmbench directly from pip
+    pip install -U fmbench
+fi
 
 sudo usermod -a -G docker $USER
 newgrp docker

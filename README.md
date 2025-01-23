@@ -24,16 +24,6 @@ Follow the following steps and get your infrastructure cost optimization strateg
 
 #### Install FMBench-Orchestrator on EC2
 
-1. **Install `conda`**
-
-    ```{.bash}
-    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-    bash Miniconda3-latest-Linux-x86_64.sh -b  # Run the Miniconda installer in batch mode (no manual intervention)
-    rm -f Miniconda3-latest-Linux-x86_64.sh    # Remove the installer script after installation
-    eval "$(/home/$USER/miniconda3/bin/conda shell.bash hook)" # Initialize conda for bash shell
-    conda init  # Initialize conda, adding it to the shell
-    ```
-
 1. **Clone the Repository**
 
     ```bash
@@ -41,25 +31,15 @@ Follow the following steps and get your infrastructure cost optimization strateg
     cd fmbench-orchestrator
     ```
 
-#### Conda Environment Setup
+1. **Install `uv`**
 
-1. **Create a Conda Environment with Python 3.11**:
-
-    ```bash
-    conda create --name fmbench-orchestrator-py311 python=3.11 -y
+    ```{.bash}
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    exec bash
+    uv venv && source .venv/bin/activate && uv pip sync pyproject.toml
+    python -m ipykernel install --user --name=.venv --display-name="Python (uv env)"
     ```
 
-1. **Activate the Environment**:
-
-    ```bash
-    conda activate fmbench-orchestrator-py311
-    ```
-
-1. **Install Required Packages**:
-
-    ```bash
-    pip install -r requirements.txt
-    ```
 
 1. **Hugging Face token**:
    Please follow the instructions [here](https://huggingface.co/docs/hub/security-tokens) to get a Hugging Face token.
@@ -86,6 +66,7 @@ Here is a description of all the command line parameters that are supported by t
 - **--fmbench-config-file** - _optional_, config file to use with `FMBench`, this is used if the orchestrator config file uses the "{{config_file}}" format for specifying the `FMBench` config file. If you are benchmarking on SageMaker or Bedrock then parameter does need to be specified.
 - **--infra-config-file** - _optional_, _default=infra.yml_, config file to use with AWS infrastructure
 - **--write-bucket** - _optional_, _default=placeholder_, *this parameter is only needed when benchmarking on SageMaker*, Amazon S3 bucket to store model files for benchmarking on SageMaker
+- **--fmbench-latest** - _optional_, _default=no_, *this parameter downloads and installs the latest version of `FMBench` from the GitHub repo rather than the latest released version from PyPi.
 
 
 #### Analyze the results

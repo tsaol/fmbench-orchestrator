@@ -28,41 +28,29 @@ docker compose version
 
 # Switch to ubuntu user and run the following commands
 sudo -u ubuntu -i bash << 'EOF'
-# Download and install Miniconda
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /home/ubuntu/Miniconda3-latest-Linux-x86_64.sh
-bash /home/ubuntu/Miniconda3-latest-Linux-x86_64.sh -b -p /home/ubuntu/miniconda3
-rm /home/ubuntu/Miniconda3-latest-Linux-x86_64.sh
-
-# Initialize conda for bash shell
-/home/ubuntu/miniconda3/bin/conda init
-
-# Create a new conda environment
-/home/ubuntu/miniconda3/bin/conda create --name fmbench_python311 -y python=3.11 ipykernel
-# Activate the environment and install fmbench
-source /home/ubuntu/miniconda3/bin/activate fmbench_python311
+# Download and install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# create and activate fmbench venv
+uv venv $HOME/.fmbench_python311 --python 3.11
+source $HOME/.fmbench_python311/bin/activate
 
 # Set the flag for latest version
 fmbench_latest="__fmbench_latest__"  # You can set this to "False" to use pip install
 
 # Conditional installation based on fmbench_latest flag
-if [ "$fmbench_latest" = "True" ]; then
-    # Install poetry
-    pip install poetry
-    
+if [ "$fmbench_latest" = "True" ]; then    
     # Clone the repository
     git clone https://github.com/aws-samples/foundation-model-benchmarking-tool.git
     
     # Change to the repository directory
     cd foundation-model-benchmarking-tool
     
-    # Build using poetry
-    poetry build
-    
-    # Install the built package
-    pip install dist/*.whl
+    # Build fmbench and install
+    uv build
+    uv pip install -U dist/*.whl
 else
     # Install fmbench directly from pip
-    pip install -U fmbench
+    uv pip install -U fmbench
 fi
 
 sudo usermod -a -G docker $USER
@@ -73,7 +61,7 @@ curl -s https://raw.githubusercontent.com/aws-samples/foundation-model-benchmark
 echo "__HF_TOKEN__" > /tmp/fmbench-read/scripts/hf_token.txt
 
 # Add the conda environment activation and directory navigation to .bashrc
-echo 'source /home/ubuntu/miniconda3/bin/activate fmbench_python311' >> /home/ubuntu/.bashrc
+echo 'source $HOME/.fmbench_python311/bin/activate' >> $HOME/.bashrc
 
 
 neuron="__neuron__"

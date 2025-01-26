@@ -30,17 +30,21 @@ docker compose version
 sudo -u ubuntu -i bash << 'EOF'
 # Download and install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
+source $HOME/.local/bin/env
 # create and activate fmbench venv
 uv venv $HOME/.fmbench_python311 --python 3.11
 source $HOME/.fmbench_python311/bin/activate
 
 # Set the flag for latest version
 fmbench_latest="__fmbench_latest__"  # You can set this to "False" to use pip install
+fmbench_repo="__fmbench_repo__"  # replaced with None or 
+                                 # or https://github.com/aws-samples/foundation-model-benchmarking-tool.git
+                                 # or a custom user provided repo
 
 # Conditional installation based on fmbench_latest flag
 if [ "$fmbench_latest" = "True" ]; then    
     # Clone the repository
-    git clone https://github.com/aws-samples/foundation-model-benchmarking-tool.git
+    git clone $fmbench_repo
     
     # Change to the repository directory
     cd foundation-model-benchmarking-tool

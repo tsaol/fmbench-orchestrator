@@ -18,7 +18,7 @@ run_steps:
   security_group_creation: yes
   key_pair_generation: yes
   deploy_ec2_instance: yes
-  delete_ec2_instance: yes
+  delete_ec2_instance: no
 
 security_group:
   group_name: fmbench_orchestrator_sg

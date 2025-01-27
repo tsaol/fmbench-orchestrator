@@ -170,14 +170,14 @@ experiments:
     # if deploying directly from HuggingFace this would be a HuggingFace model id
     # see the DJL serving deployment script in the code repo for reference. 
     #from huggingface to grab
-    hf_tokenizer_model_id: deepseek-ai/DeepSeek-R1
+    hf_tokenizer_model_id: deepseek-ai/DeepSeek-R1-Distill-Qwen-32B
     model_id: {model_id} # model id, version and image uri not needed for byo endpoint
     model_version:
     model_name: {model_id}
     # this can be changed to the IP address of your specific EC2 instance where the model is hosted
     ep_name: 'http://localhost:8000/v1/completions' 
     instance_type: {instance_type}
-    image_uri: ec2
+    image_uri: vllm/vllm-openai:v0.6.6.post1
     deploy: yes #setting to yes to run deployment script for ec2
     instance_count: 
     deployment_script: ec2_deploy.py

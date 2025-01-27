@@ -33,7 +33,7 @@ instances:
     # will be replaced in the generic config file that is used across different instances (g6e12xlarge, g6e.24xlarge, etc.)
     additional_args: -A model_id=deepseek-r1:7b -A instance_type=g6e.xlarge -A results_dir=deepseek-r1-longbench
 
-- instance_type: g6e.12xlarge
+- instance_type: g6e.24xlarge
   deploy: yes
   <<: *ec2_settings
   fmbench_config: 
@@ -48,4 +48,4 @@ instances:
   post_startup_script_params:
     # Add your additional parameters here based on the model id, the instance type and other parameters that you want to test. All these parameters
     # will be replaced in the generic config file that is used across different instances (g6e12xlarge, g6e.24xlarge, etc.)
-    additional_args: -A model_id=deepseek-ai/DeepSeek-R1-Distill-Qwen-32B -A instance_type=g6e.12xlarge -A results_dir=deepseek-r1-32b-longbench -A cli_params="--tensor-parallel-size 4"
+    additional_args: -A model_id=deepseek-ai/DeepSeek-R1-Distill-Qwen-32B -A instance_type=g6e.24xlarge -A results_dir=deepseek-r1-32b-longbench -A cli_params="--tensor-parallel-size 4"

@@ -170,7 +170,7 @@ experiments:
     # if deploying directly from HuggingFace this would be a HuggingFace model id
     # see the DJL serving deployment script in the code repo for reference. 
     #from huggingface to grab
-    hf_tokenizer_model_id: deepseek-ai/DeepSeek-R1-Distill-Qwen-32B
+    hf_tokenizer_model_id: {model_id}
     model_id: {model_id} # model id, version and image uri not needed for byo endpoint
     model_version:
     model_name: {model_id}
@@ -210,9 +210,9 @@ experiments:
     # been received.
     concurrency_levels:
     - 1
-    # - 2
+    - 2
     # - 3
-    # - 4
+    #- 4
     
     # Environment variables to be passed to the container
     # this is not a fixed list, you can add more parameters as applicable.

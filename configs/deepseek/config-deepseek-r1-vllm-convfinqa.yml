@@ -146,7 +146,7 @@ inference_parameters:
     temperature: 0.1
     top_p: 0.92
     top_k: 120  
-    max_tokens: 100
+    max_tokens: 2048
 
 # Configuration for experiments to be run. The experiments section is an array
 # so more than one experiments can be added, these could belong to the same model

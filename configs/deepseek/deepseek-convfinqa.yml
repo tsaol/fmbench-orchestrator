@@ -34,7 +34,7 @@ instances:
     additional_args: -A model_id=deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B -A instance_type=g6e.xlarge -A results_dir=deepseek-r1-1.5b-convfinqa -A cli_params="--tensor-parallel-size 1 --max-model-len 32768 --enforce-eager --enable-chunked-prefill"
 
 - instance_type: g6e.2xlarge
-  deploy: no
+  deploy: yes
   <<: *ec2_settings
   fmbench_config: 
   # This is the generic Deepseek file that can be used for any Deepseek model on Ollama. This includes
@@ -52,7 +52,7 @@ instances:
 
 
 - instance_type: g6e.12xlarge
-  deploy: no
+  deploy: yes
   <<: *ec2_settings
   fmbench_config: 
   # This is the generic Deepseek file that can be used for any Deepseek model on Ollama. This includes
@@ -69,7 +69,7 @@ instances:
     additional_args: -A model_id=deepseek-ai/DeepSeek-R1-Distill-Qwen-32B -A instance_type=g6e.12xlarge -A results_dir=deepseek-r1-32b-convfinqa -A cli_params="--tensor-parallel-size 4 --max-model-len 32768 --enforce-eager --enable-chunked-prefill"
 
 - instance_type: g6e.48xlarge
-  deploy: no
+  deploy: yes
   <<: *ec2_settings
   fmbench_config: 
   # This is the generic Deepseek file that can be used for any Deepseek model on Ollama. This includes

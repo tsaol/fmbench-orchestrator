@@ -1,10 +1,11 @@
-#cd /home/ubuntu/foundation-model-benchmarking-tool;
-source activate fmbench_python311;
-. ~/.bashrc;
+source $HOME/.fmbench_python311/bin/activate
+. ~/.bashrc
 
-if [[ "$CONDA_DEFAULT_ENV" == "fmbench_python311" ]]; then
-    echo "The current environment is fmbench_python311. Running FMBench..."
-    
+which_python=$(which python) # Get the current Python executable path
+venv_name=".fmbench_python311" # Define the virtual environment name
+
+if [[ $which_python == *"$venv_name"* ]]; then
+    echo "Python path ($which_python) is from the virtual environment: $venv_name"
     # Run fmbench and redirect output to a log file
     nohup fmbench --config-file {config_file} --local-mode {local_mode} --write-bucket {write_bucket} --tmp-dir /tmp {additional_args} > fmbench.log 2>&1 &
     FM_BENCH_PID=$!
@@ -23,6 +24,7 @@ if [[ "$CONDA_DEFAULT_ENV" == "fmbench_python311" ]]; then
         echo "Results directory not found. No flag file created."
     fi
 else
-    echo "Error: The current environment is not fmbench_python311. Exiting."
+    echo "Python path ($which_python) is NOT from the virtual environment: $venv_name"
     exit 1
 fi
+

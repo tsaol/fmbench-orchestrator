@@ -88,7 +88,6 @@ The `FMBench Orchestrator` **automates the LLM benchmarking**. It is built with 
 
     ```{.bash}
     curl -LsSf https://astral.sh/uv/install.sh | sh
-    exec bash
     uv venv && source .venv/bin/activate && uv pip sync pyproject.toml
     python -m ipykernel install --user --name=.venv --display-name="Python (uv env)"
     ```
@@ -121,8 +120,9 @@ Here is a description of all the command line parameters that are supported by t
 - **--ami-mapping-file** - _optional_, _default=ami_mapping.yml_, path to a config file containing the region->instance type->AMI mapping
 - **--fmbench-config-file** - _optional_, config file to use with `FMBench`, this is used if the orchestrator config file uses the "{{config_file}}" format for specifying the `FMBench` config file. If you are benchmarking on SageMaker or Bedrock then parameter does need to be specified.
 - **--infra-config-file** - _optional_, _default=infra.yml_, config file to use with AWS infrastructure
-- **--write-bucket** - _optional_, _default=placeholder_, *this parameter is only needed when benchmarking on SageMaker*, Amazon S3 bucket to store model files for benchmarking on SageMaker
-- **--fmbench-latest** - _optional_, _default=no_, *this parameter downloads and installs the latest version of `FMBench` from the GitHub repo rather than the latest released version from PyPi.
+- **--write-bucket** - _optional_, _default=placeholder_, this parameter is only needed when benchmarking on SageMaker*, Amazon S3 bucket to store model files for benchmarking on SageMaker.
+- **--fmbench-latest** - _optional_, _default=no_, this parameter downloads and installs the latest version of `FMBench` from the GitHub repo rather than the latest released version from PyPi.
+- **--fmbench-repo** - _optional_, _default=None_, GitHub repo for FMBench (such as https://github.com/aws-samples/foundation-model-benchmarking-tool.git), if set then then this repo is used for installing FMBench rather than doing an FMBench install from PyPI. Default is None i.e. use FMBench package from PyPi.
 
 
 #### Analyze the results

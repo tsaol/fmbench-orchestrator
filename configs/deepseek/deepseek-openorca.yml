@@ -24,7 +24,7 @@ instances:
   # NVIDIA GPUs. Users can bring in their own prompt templates, and configure other serving properties
   # through the additional args parameter. These additional args are then formatted into the generic
   # config file which is used on that particular instance to benchmark the model of interest.
-  - configs/deepseek/config-deepseek-r1-vllm-openorca.yml
+  - fmbench:deepseek/config-deepseek-r1-vllm-openorca.yml
   upload_files:
   - local: custom_prompt_templates/prompt_template_deepseek_longbench.txt
     remote: /tmp/fmbench-read/prompt_template/
@@ -45,7 +45,7 @@ instances:
   # NVIDIA GPUs. Users can bring in their own prompt templates, and configure other serving properties
   # through the additional args parameter. These additional args are then formatted into the generic
   # config file which is used on that particular instance to benchmark the model of interest.
-  - configs/deepseek/config-deepseek-r1-vllm-openorca.yml
+  - fmbench:deepseek/config-deepseek-r1-vllm-openorca.yml
   upload_files:
   - local: custom_prompt_templates/prompt_template_deepseek_longbench.txt
     remote: /tmp/fmbench-read/prompt_template/
@@ -67,7 +67,7 @@ instances:
   # NVIDIA GPUs. Users can bring in their own prompt templates, and configure other serving properties
   # through the additional args parameter. These additional args are then formatted into the generic
   # config file which is used on that particular instance to benchmark the model of interest.
-  - configs/deepseek/config-deepseek-r1-vllm-openorca.yml
+  - fmbench:deepseek/config-deepseek-r1-vllm-openorca.yml
   upload_files:
   - local: custom_prompt_templates/prompt_template_deepseek_longbench.txt
     remote: /tmp/fmbench-read/prompt_template/
@@ -88,7 +88,7 @@ instances:
   # NVIDIA GPUs. Users can bring in their own prompt templates, and configure other serving properties
   # through the additional args parameter. These additional args are then formatted into the generic
   # config file which is used on that particular instance to benchmark the model of interest.
-  - configs/deepseek/config-deepseek-r1-vllm-openorca.yml
+  - fmbench:deepseek/config-deepseek-r1-vllm-openorca.yml
   upload_files:
   - local: custom_prompt_templates/prompt_template_deepseek_longbench.txt
     remote: /tmp/fmbench-read/prompt_template/

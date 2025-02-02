@@ -90,7 +90,7 @@ The `FMBench Orchestrator` **automates the LLM benchmarking**. It is built with 
     curl -LsSf https://astral.sh/uv/install.sh | sh
     export PATH="$HOME/.local/bin:$PATH"
     uv venv && source .venv/bin/activate && uv pip sync pyproject.toml
-    UV_PROJECT_ENVIRONMENT=.fmbench_python311
+    UV_PROJECT_ENVIRONMENT=.venv
     uv add zmq
     python -m ipykernel install --user --name=.venv --display-name="Python (uv env)"
     ```

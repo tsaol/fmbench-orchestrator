@@ -60,5 +60,5 @@ DOWNLOAD_DIR_FOR_CFG_FILES: str = "downloaded_configs"
 # if the config file path starts with this then we know
 # we need to download it from fmbench github repo
 FMBENCH_CFG_PREFIX: str = "fmbench:"
-FMBENCH_CFG_GH_PREFIX: str = "https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/src/fmbench/configs/"
+FMBENCH_CFG_GH_PREFIX: str = "https://raw.githubusercontent.com/aws-samples/foundation-model-benchmarking-tool/refs/heads/main/fmbench/configs/"
 FMBENCH_GH_REPO: str = "https://github.com/aws-samples/foundation-model-benchmarking-tool.git"

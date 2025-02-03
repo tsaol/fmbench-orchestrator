@@ -56,3 +56,6 @@ instances:
   <<: *ec2_settings
   fmbench_config: 
   - {{config_file}}
+  upload_files:
+  - local: custom_prompt_templates/prompt_template_convfinqa.txt
+    remote: /tmp/fmbench-read/prompt_template/

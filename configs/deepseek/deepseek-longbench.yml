@@ -17,7 +17,7 @@ defaults: &ec2_settings
   
 instances:
 - instance_type: g6e.xlarge
-  deploy: no
+  deploy: yes
   <<: *ec2_settings
   fmbench_config: 
   # This is the generic Deepseek file that can be used for any Deepseek model on Ollama. This includes
@@ -26,19 +26,13 @@ instances:
   # config file which is used on that particular instance to benchmark the model of interest.
   - configs/deepseek/config-deepseek-r1-vllm-longbench.yml
   upload_files:
-  - local: custom_prompt_templates/prompt_template_deepseek_longbench.txt
-    remote: /tmp/fmbench-read/prompt_template/
-  - local: custom_prompt_templates/prompt_template_open_orca.txt
-    remote: /tmp/fmbench-read/prompt_template/
-  - local: byo_dataset/OpenOrca.jsonl
-    remote: /tmp/fmbench-read/source_data/
   post_startup_script_params:
     # Add your additional parameters here based on the model id, the instance type and other parameters that you want to test. All these parameters
     # will be replaced in the generic config file that is used across different instances (g6e12xlarge, g6e.24xlarge, etc.)
     additional_args: -A model_id=deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B -A instance_type=g6e.xlarge -A results_dir=deepseek-r1-1.5b-longbench -A cli_params="--tensor-parallel-size 1 --max-model-len 32768 --enforce-eager"
 
 - instance_type: g6e.2xlarge
-  deploy: no
+  deploy: yes
   <<: *ec2_settings
   fmbench_config: 
   # This is the generic Deepseek file that can be used for any Deepseek model on Ollama. This includes
@@ -47,16 +41,25 @@ instances:
   # config file which is used on that particular instance to benchmark the model of interest.
   - configs/deepseek/config-deepseek-r1-vllm-longbench.yml
   upload_files:
-  - local: custom_prompt_templates/prompt_template_deepseek_longbench.txt
-    remote: /tmp/fmbench-read/prompt_template/
-  - local: custom_prompt_templates/prompt_template_open_orca.txt
-    remote: /tmp/fmbench-read/prompt_template/
-  - local: byo_dataset/OpenOrca.jsonl
-    remote: /tmp/fmbench-read/source_data/
   post_startup_script_params:
     # Add your additional parameters here based on the model id, the instance type and other parameters that you want to test. All these parameters
     # will be replaced in the generic config file that is used across different instances (g6e12xlarge, g6e.24xlarge, etc.)
     additional_args: -A model_id=deepseek-ai/DeepSeek-R1-Distill-Llama-8B -A instance_type=g6e.2xlarge -A results_dir=deepseek-r1-8b-longbench -A cli_params="--tensor-parallel-size 1 --max-model-len 32768 --enforce-eager"
+
+- instance_type: g6e.4xlarge
+  deploy: yes
+  <<: *ec2_settings
+  fmbench_config: 
+  # This is the generic Deepseek file that can be used for any Deepseek model on Ollama. This includes
+  # NVIDIA GPUs. Users can bring in their own prompt templates, and configure other serving properties
+  # through the additional args parameter. These additional args are then formatted into the generic
+  # config file which is used on that particular instance to benchmark the model of interest.
+  - configs/deepseek/config-deepseek-r1-vllm-longbench.yml
+  upload_files:
+  post_startup_script_params:
+    # Add your additional parameters here based on the model id, the instance type and other parameters that you want to test. All these parameters
+    # will be replaced in the generic config file that is used across different instances (g6e12xlarge, g6e.24xlarge, etc.)
+    additional_args: -A model_id=deepseek-ai/DeepSeek-R1-Distill-Qwen-14B -A instance_type=g6e.4xlarge -A results_dir=deepseek-r1-14b-longbench -A cli_params="--tensor-parallel-size 1 --max-model-len 32768 --enforce-eager"
 
 
 - instance_type: g6e.12xlarge
@@ -69,19 +72,13 @@ instances:
   # config file which is used on that particular instance to benchmark the model of interest.
   - configs/deepseek/config-deepseek-r1-vllm-longbench.yml
   upload_files:
-  - local: custom_prompt_templates/prompt_template_deepseek_longbench.txt
-    remote: /tmp/fmbench-read/prompt_template/
-  - local: custom_prompt_templates/prompt_template_open_orca.txt
-    remote: /tmp/fmbench-read/prompt_template/
-  - local: byo_dataset/OpenOrca.jsonl
-    remote: /tmp/fmbench-read/source_data/
   post_startup_script_params:
     # Add your additional parameters here based on the model id, the instance type and other parameters that you want to test. All these parameters
     # will be replaced in the generic config file that is used across different instances (g6e12xlarge, g6e.24xlarge, etc.)
     additional_args: -A model_id=deepseek-ai/DeepSeek-R1-Distill-Qwen-32B -A instance_type=g6e.12xlarge -A results_dir=deepseek-r1-32b-longbench -A cli_params="--tensor-parallel-size 4 --max-model-len 32768 --enforce-eager"
 
 - instance_type: g6e.48xlarge
-  deploy: yes
+  deploy: no
   <<: *ec2_settings
   fmbench_config: 
   # This is the generic Deepseek file that can be used for any Deepseek model on Ollama. This includes
@@ -91,12 +88,6 @@ instances:
   #- fmbench:deepseek/config-deepseek-r1-vllm-longbench.yml
   - configs/deepseek/config-deepseek-r1-vllm-longbench.yml
   upload_files:
-  - local: custom_prompt_templates/prompt_template_deepseek_longbench.txt
-    remote: /tmp/fmbench-read/prompt_template/
-  - local: custom_prompt_templates/prompt_template_open_orca.txt
-    remote: /tmp/fmbench-read/prompt_template/
-  - local: byo_dataset/OpenOrca.jsonl
-    remote: /tmp/fmbench-read/source_data/
   post_startup_script_params:
     # Add your additional parameters here based on the model id, the instance type and other parameters that you want to test. All these parameters
     # will be replaced in the generic config file that is used across different instances (g6e12xlarge, g6e.24xlarge, etc.)

@@ -33,8 +33,8 @@ sudo -u ubuntu -i bash << 'EOF'
 # Download and install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
 # create and activate fmbench venv
-uv venv $HOME/.fmbench_python311 --python 3.11
-source $HOME/.fmbench_python311/bin/activate
+uv venv $HOME/.fmbench_python312 --python 3.12
+source $HOME/.fmbench_python312/bin/activate
 
 # Set the flag for latest version
 fmbench_latest="__fmbench_latest__"  # You can set this to "False" to use pip install

@@ -1,8 +1,8 @@
-source $HOME/.fmbench_python311/bin/activate
+source $HOME/.fmbench_python312/bin/activate
 . ~/.bashrc
 
 which_python=$(which python) # Get the current Python executable path
-venv_name=".fmbench_python311" # Define the virtual environment name
+venv_name=".fmbench_python312" # Define the virtual environment name
 
 if [[ $which_python == *"$venv_name"* ]]; then
     echo "Python path ($which_python) is from the virtual environment: $venv_name"

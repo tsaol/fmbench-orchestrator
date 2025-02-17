@@ -81,7 +81,7 @@ curl -s https://raw.githubusercontent.com/aws-samples/foundation-model-benchmark
 echo "__HF_TOKEN__" > /tmp/fmbench-read/scripts/hf_token.txt
 
 # Add the conda environment activation and directory navigation to .bashrc
-echo 'source $HOME/.fmbench_python311/bin/activate' >> $HOME/.bashrc
+echo 'source $HOME/.fmbench_python312/bin/activate' >> $HOME/.bashrc
 
 source /home/ubuntu/.bashrc
 touch /tmp/startup_complete.flag

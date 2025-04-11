@@ -1,0 +1,21 @@
+# general configuration applicable to the entire app
+general:
+  name: Llama-4-Scout-17B-16E-Instruct
+
+instances:
+# This is for g6e type instances
+- instance_type: g6e.48xlarge
+  deploy: yes
+  region: {{region}}
+  ami_id: {{ gpu }}
+  device_name: /dev/sda1
+  ebs_del_on_termination: True
+  ebs_Iops: 16000
+  ebs_VolumeSize: 400
+  ebs_VolumeType: gp3
+  startup_script: startup_scripts/ubuntu_startup.txt
+  post_startup_script: post_startup_scripts/fmbench.txt
+  # Timeout period in Seconds before a run is stopped
+  fmbench_complete_timeout: 7200
+  fmbench_config: 
+  - fmbench:llama4/config-llama4-scout-17b-g6e-meetings-vllm.yml

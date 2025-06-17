@@ -64,7 +64,7 @@ git clone https://github.com/vllm-project/vllm.git
 cd vllm
 
 # Build a Docker image using the provided Dockerfile for CPU, with a shared memory size of 4GB
-sudo docker build -f Dockerfile.cpu -t vllm-cpu-env --shm-size=4g .
+sudo docker build -f ./docker/Dockerfile.cpu -t vllm-cpu-env --shm-size=4g .
 
 DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
 mkdir -p $DOCKER_CONFIG/cli-plugins
